@@ -269,5 +269,68 @@ make_table_one = function(.d){
 }
 
 
+# fit GEE with a given model formula and organize results nicely
+report_gee_table = function(dat,
+                      formulaString,
+                      analysisLabel,
+                      write.dir = NA){
+  
+  #@add correction in Sebastien paper
+  mod = geeglm( eval( parse(text = formulaString) ),
+                id = uid,  #@ participant unique ID
+                family = gaussian,
+                corstr = "exchangeable",
+                data = dat )
+  
+  est = coef(mod)
+  lo = coef(mod) - qnorm(.975) * summary(mod)$geese$mean$san.se
+  hi = coef(mod) + qnorm(.975) * summary(mod)$geese$mean$san.se
+  Z = abs( coef(mod) / summary(mod)$geese$mean$san.se ) 
+  
+  # @consider using t-dist
+  pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+  
+  res = data.frame( analysis = analysisLabel,
+                    variable = names(est),
+                    est = est, 
+                    lo = lo,
+                    hi = hi,
+                    pval = pval,
+                    n.analyzed = nrow(dat),
+                    formulaString = formulaString )
+  
+  if ( !is.na(write.dir) ) {
+    setwd(write.dir)
+    write.csv( res, paste(analysisLabel, "_gee_estimates.csv") )
+  }
+
+  return(res)
+}
+
+
+
+
+#bm
+
+
+# SAPB-E
+# write_geem = function(my.gee,
+#                       take.exp = FALSE,
+#                       name,
+#                       section) {
+#   print( summary(my.gee) )
+#   
+#   est = coef(my.gee)
+#   lo = coef(my.gee) - qnorm(.975) * summary(my.gee)$se.robust
+#   hi = coef(my.gee) + qnorm(.975) * summary(my.gee)$se.robust
+#   Z = abs( coef(my.gee) / summary(my.gee)$se.robust ) 
+#   pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+#   
+#   if (take.exp == TRUE) {
+#     est = exp(est)
+#     lo = exp(lo)
+#     hi = exp(hi)
+#   }
+  
 
 

@@ -13,6 +13,8 @@ library(tableone)
 library(here)
 library(stringr)
 library(data.table)
+library(tidyverse)
+library(geepack)
 
 
 # WORKING DIRECTORIES  -----------------------------------------------------------
@@ -23,8 +25,8 @@ library(data.table)
 raw.data.dir = str_replace_all( string = here(),
                                 pattern = "Code",
                                 replacement = "Data/Merged site data from Man Yee" )
-# for intermediate steps that still have county variable
-prepped.data.dir.private = str_replace_all( string = here(),
+
+prepped.data.dir = str_replace_all( string = here(),
                                             pattern = "Code",
                                             replacement = "Data/Prepped" )
 
@@ -38,6 +40,9 @@ imputed.data.dir = str_replace_all( string = here(),
 results.dir = str_replace_all( string = here(),
                                pattern = "Code",
                                replacement = "Results from R" )
+
+# for auxiliary results and sanity checks
+results.aux.dir = paste(results.dir, "/Auxiliary", sep="")
 
 
 code.dir = here()

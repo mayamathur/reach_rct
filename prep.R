@@ -3,8 +3,7 @@
 
 # To do:
 # - Exclude sites with <70% retention at wave 2
-# - Standardize all outcomes
-# - Imputation
+# - *Dichotomize baseline trait forgiveness
 
 # Questions for Man Yee:
 # - Do any items need reverse-coding?
@@ -78,6 +77,9 @@ if ( run.sanity == TRUE ) {
 
 
 # INITIAL RECODING -----------------------------------------------------------
+
+# unique ID, because some participants from different sites have same ID
+d$uid = 1:nrow(d)
 
 d$site = recode(d$site, 
                 `1` = "Hong Kong",
@@ -280,8 +282,6 @@ missmap(d)
 
 # ~ Make imputations --------------------------------------
 
-#bm: ready to try this with newly trimmed df :)
-
 if ( impute.from.scratch == TRUE ) {
   ini = mice(d, m=1, maxit = 0 )
   
@@ -311,7 +311,6 @@ if ( impute.from.scratch == TRUE ) {
   myMethod[ !( names(myMethod) %in% varsToImpute ) ] = ""
   table(myMethod)
   
-  #bm
   imps = mice( d,
                m=M,  
                predictorMatrix = myPred,
@@ -349,8 +348,25 @@ if ( impute.from.scratch == TRUE ) {
 }
 
 
+# WIDE TO LONG -----------------------------------------------------------
+
+# will need to do this for each imputation, too
+# return to this for the sensitivity analysis
 
 
+#@will need to edit col names in here after Man Yee separates BSI, etc.
+
+# close, but this has rows for each outcome
+# see "anscombe" example here
+l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
+                        names_to = c(".value", "set"),
+                        names_sep = "_" )
+
+
+# SAVE FINAL DATASET -----------------------------------------------------------
+
+setwd(prepped.data.dir)
+fwrite(d, "prepped_data.csv")
 
 
 
