@@ -66,7 +66,6 @@ report_gee_table(dat %>% filter( !is.na(T1_TrFS) ),
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
 
-
 # example 
 report_gee_table(dat %>% filter( !is.na(age) &
                                    !is.na(gender) & 
