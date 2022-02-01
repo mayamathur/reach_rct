@@ -118,3 +118,156 @@ recode_psych_scale = function(.d,
   return(.d2)
 }
 
+
+
+# ANALYSIS HELPERS  -----------------------------------------------------------
+
+
+### Make my own Table 1
+# x: variable to be summarized
+# var.header: pretty variable name to use in table
+# type: "cat", "bin01", "cont"
+# num.digits: rounding
+# countNA: should we count NA as its own category for cat and bin01?
+# .tab1: the current table 1 (if NA, starts generating one from scratch)
+# print: print the table-in-progress?
+table1_add_row = function( x, # vector
+                           var.header,  # variable name to use in table
+                           type,
+                           perc.digits = 0,
+                           num.digits = 2,
+                           countNA = TRUE,
+                           .tab1 = NULL,
+                           print = FALSE ) {
+  
+  useNA = ifelse( countNA == TRUE, "ifany", "no" )
+  
+  if ( type == "cat" ) {
+    # this line will drop levels that have counts of 0, but it's surprisingly not easy to fix that
+    t = table(x, useNA = useNA)
+    pt = prop.table(t)
+    
+    row.names = names(t)
+    row.names[ is.na(row.names) ] = "Not reported"
+    
+    stat.string = paste( t, " (", round( 100 * pt, digits = perc.digits ), "%)", sep = "" )
+  }
+  
+  if ( type == "bin01" ) {
+    # force "1" entry to be ordered first
+    t = table(x == 0, useNA = useNA)
+    pt = prop.table(t)
+    
+    row.names = names(t)
+    # reverse the coding again
+    row.names[ row.names == "FALSE" ] = "Yes"
+    row.names[ row.names == "TRUE" ] = "No"
+    row.names[ is.na(row.names) ] = "Not reported"
+    
+    stat.string = paste( t, " (", round( 100 * pt, digits = perc.digits ), "%)", sep = "" )
+  }
+  
+  if ( type == "cont") {
+    # assume we want the median and IQR
+    if ( countNA == TRUE ) {
+      
+      stat.string = paste( round( median( x, na.rm = TRUE ), digits = num.digits ),
+                           " (", 
+                           round( quantile( x, 0.25, na.rm = TRUE ), digits = num.digits ),
+                           ", ",
+                           round( quantile( x, 0.75, na.rm = TRUE ), digits = num.digits ),
+                           ")", 
+                           sep = "" )
+      
+      n.NA = sum( is.na(x) )
+      perc.NA = mean( is.na(x) )
+      
+      stat.string2 = paste( n.NA, " (", round( 100 * perc.NA, digits = perc.digits ), "%)", sep = "" )
+      
+      # first row is just the median, so no row name
+      row.names = c("Not reported")
+    }
+    # haven't written the case of countNA == FALSE yet because not relevant for this paper
+    
+    new.row = data.frame( 
+      "Characteristic" = c( var.header, row.names ),
+      "Summary" = c( stat.string, stat.string2 ) )
+  }
+  
+  if ( type %in% c("cat", "bin01") ) {
+    new.row = data.frame( 
+      "Characteristic" = c( var.header, row.names ),
+      "Summary" = c( NA, stat.string ) )
+  }
+  
+  # add the new row to existing Table 1, if applicable
+  if ( !is.null(.tab1) ) .tab1 = rbind(.tab1, new.row)
+  else .tab1 = new.row
+  if ( print == TRUE ) print(.tab1)
+  return(.tab1)
+}
+
+
+
+# return percent true for 0/1 variable, counting NA as own category
+percTRUE_incl_NA = function(x) {
+  prop.table( table(x, useNA = "ifany") )[2]
+}
+
+
+
+make_table_one = function(.d){
+  t = table1_add_row( x = .d$age,
+                      var.header = "Age",  
+                      type = "cont",
+                      countNA = TRUE )
+  
+  t = table1_add_row( x = .d$gender,
+                      var.header = "Gender",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t )
+  
+  t = table1_add_row( x = .d$eth,
+                      var.header = "Ethnicity",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  t = table1_add_row( x = .d$educ,
+                      var.header = "Education",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  t = table1_add_row( x = .d$income,
+                      var.header = "Income",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  t = table1_add_row( x = .d$isReligious,
+                      var.header = "Is religious",  
+                      type = "bin01",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  t = table1_add_row( x = .d$religion,
+                      var.header = "Religion",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  t = table1_add_row( x = .d$marstat,
+                      var.header = "Marital status",  
+                      type = "cat",
+                      countNA = TRUE,
+                      .tab1 = t)
+  
+  
+  return(t)
+}
+
+
+
+

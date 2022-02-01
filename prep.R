@@ -15,6 +15,8 @@
 # - race "Colored" vs. "Black African"; the former shows up in South Africa only
 # - codebook says there should be 6 income levels, but in fact there are 9
 # - similar issue with religion, and also there is both Christian and Catholic and Protestant
+# - *Prereg has two different lists of secondaries: (TFS, forbearance, DTFS, flourishing index) vs. (EFS, forbearance, DTFS, flourishing)
+
 
 # PRELIMINARIES -----------------------------------------------------------
 
@@ -37,7 +39,8 @@ run.sanity = FALSE
 # should we impute from scratch or read in saved datasets?
 impute.from.scratch = TRUE
 # number of imputations
-M = 10 
+#@increase later
+M = 3
 
 # read in raw data
 setwd(raw.data.dir)
@@ -236,8 +239,46 @@ summary( lm(T2_TRIM ~ treat, data = d) )
 summary( lm(T2_DTFS ~ treat, data = d) )
 
 
-# IMPUTATION IN WIDE FORMAT-----------------------------------------------------------
+# TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
 
+#@move this to analyze.R
+
+# stratify demographics by treatment group
+t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
+t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
+
+# look for dimension mismatches caused by missing categories in one treatment group
+dim(t1.treat); dim(t1.cntrl)
+t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
+
+#@there's a lot of missing data on ethnicity
+
+
+
+#CreateTableOne( data = d %>% select( c(treat, demoVars, ) ) )
+
+# IMPUTATION IN WIDE FORMAT -----------------------------------------------------------
+
+# ~ Missingness --------------------------------------
+
+
+
+t = d %>% summarise( across( everything(), ~ round( 100*mean( !is.na(.x) ) ) ) )
+t = as.data.frame( t(t) ) # transpose it
+names(t) = "perc.nonmissing"
+
+t %>% arrange(perc.nonmissing)
+#**save and give to Man Yee
+
+setwd(results.dir)
+setwd("Auxiliary")
+fwrite(t, "perc_nonmissing_by_var.csv")
+
+missmap(d)
+
+
+
+# ~ Make imputations --------------------------------------
 
 #bm: ready to try this with newly trimmed df :)
 
@@ -248,60 +289,30 @@ if ( impute.from.scratch == TRUE ) {
   # all PMM, as desired
   ini$method
   
-  # variables to be imputed: those measured at follow-up
-  # these are the only vars that can have missing data
-  # lists of variables from helper_analysis.R::prelims()
-  meats <<- c("chicken", "turkey", "fish", "pork", "beef", "otherMeat")
-  animProds <<- c("dairy", "eggs")
-  decoy <<- c("refined", "beverages")
-  goodPlant <<- c("leafyVeg", "otherVeg", "fruit", "wholeGrain", "legumes")
-  allFoods <<- c(meats, animProds, decoy, goodPlant)
-  
-  foodVars <<- c( names(d)[ grepl(pattern = "Freq", names(d) ) ],
-                  names(d)[ grepl(pattern = "Ounces", names(d) ) ] )
-  
-  # exploratory psych variables
-  psychY <<- c("importHealth",
-               "importEnviro",
-               "importAnimals",
-               "activ",
-               "spec",
-               "dom")
-  
-  # secondary food outcomes
-  secFoodY <<- c("totalMeat",
-                 "totalAnimProd",
-                 meats,
-                 animProds,
-                 "totalGood")
-  toAnalyze = c("mainY",
-                secFoodY,
-                psychY )
-  
-  # variables to be used in imputation model:
-  # "real" variables measured at baseline and the F/U variables
-  w1Vars = c( "treat",
-              demoVars )
-  # state has too many categories to work well as predictor
-  impModelVars = w1Vars[ !w1Vars == "state" ]
+  # set variables to be imputed, and those to use as predictors
+  varsToImpute = names(d)[ !names(d) %in% c("ID", unusedYnamesWide, demoVarsAux) ]
+  impModelPredictors = c(primYNamesWide, secYNamesWide, demoVarsToAnalyze, unusedYnamesWide, demoVarsAux)
   
   # make own predictor matrix by modifying mice's own predictor matrix to keep structure the same
   #  from mice docs: "Each row corresponds to a variable block, i.e., a set of variables to be imputed. A value of 1 means that the column variable is used as a predictor for the target block (in the rows)"
   myPred = ini$pred
+  
+  # from EV:
   myPred[myPred == 1] = 0
   # impute all F/U variables using the sensible ones from baseline as well as all the other F/U vars
-  myPred[ names(d2) %in% toAnalyze, # vars to be imputed
-          names(d2) %in% c(impModelVars, toAnalyze) ] = 1  # ...and vars in the imputation model
+  myPred[ names(d) %in% varsToImpute, # vars to be imputed
+          names(d) %in% impModelPredictors ] = 1  # ...and vars in the imputation model
   diag(myPred) = 0  # but a variable can't impute itself
   sum(myPred)
   
   
   myMethod = ini$method
-  myMethod[ !names(myMethod) %in% toAnalyze ] = ""
+  myMethod[ names(myMethod) %in% varsToImpute ] = "pmm"
+  myMethod[ !( names(myMethod) %in% varsToImpute ) ] = ""
   table(myMethod)
   
-  # imputing secfoodY variables themselves seem to cause issues
-  imps = mice( d2,
+  #bm
+  imps = mice( d,
                m=M,  
                predictorMatrix = myPred,
                method = myMethod,
@@ -310,19 +321,22 @@ if ( impute.from.scratch == TRUE ) {
   imps$loggedEvents$dep
   
   # make sure there is no missing data in the imputations
-  any.missing = apply( complete(imps,1)[ ,toAnalyze],
+  any.missing = apply( complete(imps,1),
                        2,
                        function(x) any(is.na(x)) ) # should be FALSE
-  if ( any(any.missing) == TRUE ) warning("Imputed datasets have missing data! Look at logged events.")
   
-  #cbind(d2$chicken, complete(imps,1)$chicken)
+
+  # **important: any.missing WILL have missing values on auxiliary vars used to make the imputation model
+  # because we're not imputing those vars
+  # what's important is that there should be no missing data in the varsToImput
+  if ( any( any.missing[varsToImpute] ) == TRUE ) warning("*****Imputed datasets have missing data! Look at logged events.")
   
-  
+
   ##### Save Imputations for Reproducibility #####
   if ( overwrite.res == TRUE ) {
     
     # save imputations for reproducibility
-    setwd(imputed.dir.private)
+    setwd(imputed.data.dir)
     save( imps, file = "imputed_datasets.RData" )
     
     for (i in 1:M) {

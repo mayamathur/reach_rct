@@ -54,6 +54,10 @@ source("helper.R")
 # BSI-anxiety
 # TRIM
 primYNames = c("BSI", "TRIM")
+# names with times, as in wide-format data
+primYNamesWide = c( paste( "T1_", primYNames, sep=""),
+                    paste( "T2_", primYNames, sep=""),
+                    paste( "T3_", primYNames, sep="") )
 
 # secondary outcomes (4)
 #@not sure which is flourishing index vs. forbearance scale
@@ -62,7 +66,25 @@ primYNames = c("BSI", "TRIM")
 # Decision to Forgive Scale (DTFS)
 # Flourishing Index (?)
 secYNames = c("TrFS", "FSFS", "DTFS" )
+# names with times, as in wide-format data
+secYNamesWide = c( paste( "T1_", secYNames, sep=""),
+                   paste( "T2_", secYNames, sep=""),
+                   paste( "T3_", secYNames, sep="") )
 
 # not used in analysis, but included in imputation model
 unusedYnames = c("EFS", "PGI", "TSHS")
+# names with times, as in wide-format data
+unusedYnamesWide = c( paste( "T1_", unusedYnames, sep=""),
+                      paste( "T2_", unusedYnames, sep=""),
+                      paste( "T3_", unusedYnames, sep="") )
+
+# these are used in sensitivity analyses that control for precision covariates
+demoVarsToAnalyze = c("site", "age", "gender")
+
+# auxiliary vars in imputation model
+demoVarsAux = c("eth", "educ", "income", "isReligious", "religion", "marstat")
+
+
+
+
 
