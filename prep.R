@@ -11,7 +11,10 @@
 # - South Africa is only 54% complete for T2
 # - Shouldn't there be 2 BSI variables?
 
-
+# - Subject 171 has gender 0, but that option isn't in the codebook
+# - race "Colored" vs. "Black African"; the former shows up in South Africa only
+# - codebook says there should be 6 income levels, but in fact there are 9
+# - similar issue with religion, and also there is both Christian and Catholic and Protestant
 
 # PRELIMINARIES -----------------------------------------------------------
 
@@ -71,7 +74,7 @@ if ( run.sanity == TRUE ) {
 
 
 
-# INITIAL RECODING AND VARIABLE WRANGLING -----------------------------------------------------------
+# INITIAL RECODING -----------------------------------------------------------
 
 d$site = recode(d$site, 
                 `1` = "Hong Kong",
@@ -88,14 +91,102 @@ d$treat = recode(d$Group,
                  `1` = 1,
                  `2` = 0)
 
+#@ subject 171 has gender=0, but that's not in codebook
+d$gender = recode(d$GENDER,
+                  `1` = "Male", 
+                  `2` = "Female",
+                  `3` = "Other",
+                  .default = "RECODE TROUBLE")
+
+d$eth = recode(d$Ethnicity,
+               `1` = "Asian", 
+               `2` = "Black African",
+               `3` = "Coloured",
+               `4` = "Indian",
+               `5` = "White",
+               `6` = "Other",
+               .default = "RECODE TROUBLE")
+
+d$educ = recode(d$EDUCATION,
+               `1` = "a.LtHS", 
+               `2` = "b.HS",
+               `3` = "c.CollegePlus",
+               `4` = "d.Other",
+               .default = "RECODE TROUBLE")
+
+# these differed based on countries' own currencies
+#@check about number of categories
+d$income = recode(d$HOUSEHOLD_INCOME,
+                  `1` = "a", 
+                  `2` = "b",
+                  `3` = "c",
+                  `4` = "d",
+                  `5` = "e",
+                  `6` = "f",
+                  `7` = "g",
+                  `8` = "h",
+                  `9` = "i",
+                  .default = "RECODE TROUBLE")
+
+d$isReligious = recode(d$RELIGION_YN,
+                       `1` = 1,
+                       `2` = 0)
+
+d$religion = recode(d$RELIGION,
+                    `1` = "Christian", 
+                    `2` = "Catholic",
+                    `3` = "Protestant",
+                    `4` = "Buddhist",
+                    `5` = "Muslim",
+                    `6` = "Other",
+                    `8` = "UNKNOWN_CAT",
+                    .default = "RECODE TROUBLE")
+
+
+d$marstat = recode(d$MARRIAGE,
+                   `1` = "Single", 
+                   `2` = "In relationship",
+                   `3` = "Married",
+                   `4` = "Separated",
+                   `5` = "Divorced",
+                   `6` = "Widowed",
+                   .default = "RECODE TROUBLE")
+
+
+
+
 # relabel the TFS scales so that recode_psych_var doesn't confused them with DTFS
 ( varNames = stringsWith(pattern="_TFS", names(d)) )
 newNames = str_replace(string = varNames, pattern = "_TFS", replacement = "_TrFS")
 names(d)[ names(d) %in% varNames ] = newNames
 
-# remove this character variable that will confuse recode_psych_var
-d = d %>% select(-T1_DTFS_EVENT)
 
+
+# RENAME VARIABLES THAT DON'T NEED RECODING -----------------------------------------------------------
+
+d = d %>% rename( age = AGE )
+
+# DROP VARIABLES -----------------------------------------------------------
+
+# need to remove T1_DTFS_EVENT because it will confuse recode_psych_var
+d = d %>% select( -c(T1_DATE,
+                     T2_DATE,
+                     T3_DATE,
+                     GENDER,
+                     GENDER_OTHER,
+                     Group,
+                     RACE_OTHER,
+                     Ethnicity,
+                     MARRIAGE,
+                     EDUCATION,
+                     EDU_OTHER,
+                     HOUSEHOLD_INCOME,
+                     RELIGION,
+                     RELIGION_YN,
+                     RELI_OTHER,
+                     FRE_RELI_EVENT,
+                     T1_severity,
+                     T1_DTFS_EVENT) )
 
 
 
@@ -147,6 +238,8 @@ summary( lm(T2_DTFS ~ treat, data = d) )
 
 # IMPUTATION IN WIDE FORMAT-----------------------------------------------------------
 
+
+#bm: ready to try this with newly trimmed df :)
 
 if ( impute.from.scratch == TRUE ) {
   ini = mice(d, m=1, maxit = 0 )
