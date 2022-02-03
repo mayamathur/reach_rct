@@ -57,7 +57,8 @@ meanNA(imps[[2]]$T2_TRIM)
 #@need to add Bonferronis
 for ( .y in primYNames ) {
   
-  .formulaString = paste("T2_", .y, " ~ treat + site", sep = "" )
+  .fullYName = paste("T2_", .y, sep = "")
+  .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
 
   
   for ( .missMethod in c("MI", "CC") ) {
@@ -70,6 +71,7 @@ for ( .y in primYNames ) {
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
+                         analysisVarNames = c(.fullYName, "treat", "site"),
                          analysisLabel = "set1",
                          .results.dir = .results.dir )
     
@@ -86,26 +88,63 @@ for ( .y in primYNames ) {
 # GEE of primary Y's ~ treat*T1_TFS(binary) + site
 #@need to dichotomize T1_TFS and adjust model string below
 
-# example 
-report_gee_table(dat %>% filter( !is.na(T1_TrFS) ),
-                 formulaString = "T2_BSI ~ treat*T1_TrFS + site",
-                 analysisLabel = "set2_T2_BSI",
-                 write.dir = results.aux.dir)
+
+for ( .y in primYNames ) {
+  
+  .fullYName = paste("T2_", .y, sep = "")
+  .formulaString = paste("T2_", .y, " ~ treat*T1_TrFS + site", sep = "" )
+  
+  
+  for ( .missMethod in c("MI", "CC") ) {
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 2/", missingString, sep = "" )
+    
+    analyze_one_outcome( missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         analysisVarNames = c(.fullYName, "treat", "site", "T1_TrFS"),
+                         analysisLabel = "set2",
+                         .results.dir = .results.dir )
+    
+    
+  }
+}
+
+
+
 
 # SET 3 GEE MODELS -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
 
-# example 
-report_gee_table(dat %>% filter( !is.na(age) &
-                                   !is.na(gender) & 
-                                   !is.na(T1_BSI) & 
-                                   !is.na(T1_TRIM) ),
-                 formulaString = "T2_BSI ~ treat + site + age + gender + T1_BSI + T1_TRIM",
-                 analysisLabel = "set3_T2_BSI",
-                 write.dir = results.aux.dir)
 
+for ( .y in c(primYNames, secYNames) ) {
+  
+  .fullYName = paste("T2_", .y, sep = "")
+  .formulaString = paste("T2_", .y, " ~ treat + site + age + gender + T1_BSI + T1_TRIM", sep = "" )
+  
+  
+  for ( .missMethod in c("MI", "CC") ) {
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 3/", missingString, sep = "" )
+    
+    analyze_one_outcome( missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSI", "T1_TRIM"),
+                         analysisLabel = "set3",
+                         .results.dir = .results.dir )
+    
+    
+  }
+}
 
 
 

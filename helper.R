@@ -74,7 +74,7 @@ recode_psych_scale = function(.d,
                               revCode = NA,
                               printCorMat = TRUE,
                               dropSubscaleVars = FALSE) {
-
+  
   # duplicate dataset just for ease of sanity-checking
   .d2 = .d
   
@@ -90,7 +90,7 @@ recode_psych_scale = function(.d,
   if (printCorMat == TRUE){
     library(corrr)
     corrs = suppressWarnings( .d2 %>% select(subscales) %>%
-      correlate( use = "pairwise.complete.obs" ) )
+                                correlate( use = "pairwise.complete.obs" ) )
     
     print( paste( "Reverse-coded: ", paste(revCode, collapse = ", "), sep = "" ) )
     print(corrs)
@@ -101,11 +101,11 @@ recode_psych_scale = function(.d,
   
   head( .d2 %>% select(subscales) )
   
-
+  
   # make new variable whose name is just the root
   # new variable is mean by subject of the subscales
   .d2[[scale]] = rowMeans( .d2 %>% select(subscales) )
-
+  
   
   # standardize the new variable
   .d2[[scale]] = ( .d2[[scale]] - mean( .d2[[scale]], na.rm = TRUE ) ) / sd( .d2[[scale]], na.rm = TRUE )
@@ -271,9 +271,16 @@ make_table_one = function(.d){
 
 # fit GEE with a given model formula and organize results nicely
 report_gee_table = function(dat,
-                      formulaString,
-                      analysisLabel,
-                      write.dir = NA){
+                            formulaString,
+                            analysisVarNames,  # for excluding missing data
+                            analysisLabel,
+                            write.dir = NA){
+  
+  # exclude missing data
+  # demonstration of how this fn works:
+  # df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
+  # df %>% drop_na(x)
+  dat = dat %>% drop_na(analysisVarNames)
   
   #@add correction in Sebastien paper
   mod = geeglm( eval( parse(text = formulaString) ),
@@ -305,7 +312,7 @@ report_gee_table = function(dat,
     setwd(write.dir)
     write.csv( res, paste(analysisLabel, "_gee_estimates.csv") )
   }
-
+  
   return(res)
 }
 
@@ -315,12 +322,13 @@ report_gee_table = function(dat,
 # missMethod: "MI" or "CC"
 # yName: outcomes to analyze
 analyze_one_outcome = function(missMethod,
-                                yName,
+                               yName,
                                formulaString,
+                               analysisVarNames, # for handling missing data in report_gee_table
                                analysisLabel,
                                .results.dir) {
   
-
+  
   # #@TEST ONLY
   # missMethod = "MI"
   # yName = primYNames[1]
@@ -331,38 +339,43 @@ analyze_one_outcome = function(missMethod,
   # n.secY = sum( length(secFoodY), length(psychY) )
   # ( alpha2 = 0.05 / n.secY ) # Bonferroni-adjusted alpha
   
-
+  
   if ( exists("res.raw") ) suppressWarnings( rm(res.raw) )
   
-
+  
   # ~ Fit Model(s) with MI or CC ------------------------------
   if ( missMethod == "MI" ) {
     mi.res = lapply( imps, function(.d) report_gee_table(dat = .d,
                                                          formulaString = formulaString,
+                                                         analysisVarNames = analysisVarNames,
                                                          analysisLabel = analysisLabel,
                                                          write.dir = NA) )
   }
   
   if ( missMethod == "CC" ) {
+    # format as list, exactly like MI, so that it can be passed to mi_pool_all
     mi.res = list( report_gee_table(dat = d,
-                      formulaString = formulaString,
-                      analysisLabel = analysisLabel,
-                      write.dir = NA) )
+                                    formulaString = formulaString,
+                                    analysisVarNames = analysisVarNames,
+                                    analysisLabel = analysisLabel,
+                                    write.dir = NA) )
   }
   
-
+  
   # ~ Pool Imputations if Applicable ------------------------------
+  
+  #@ EDIT MI_POOL_ALL SO THAT IT RECORDS N.ANALYZED
   
   # pool the imputations
   # might have only 1 row if we're doing CC analysis
- res.raw = mi_pool_all(mi.res)
-
-
+  res.raw = mi_pool_all(mi.res)
+  
+  
   # ~ Prettify and Write Results Tables ------------------------------
   
   res.raw = res.raw %>% add_column(.before = 1,
-                          analysis = analysisLabel,
-                          formulaString = formulaString)
+                                   analysis = analysisLabel,
+                                   formulaString = formulaString)
   
   #bm
   # this part breaks for CC because doesn't have pvalBonf
@@ -388,7 +401,7 @@ analyze_one_outcome = function(missMethod,
   
   string = paste( analysisLabel, yName, missingString, "_gee_table_pretty", ".csv", sep="_" )
   write_csv(res.nice, string)
-
+  
   # # FROM EV:
   # 
   # if ( study %in% c(1,2,3) ) {
@@ -751,7 +764,7 @@ mi_pool = function( ests,
                     los = NA,
                     his = NA,
                     pvals = NA
-                    ){
+){
   
   m = length(ests)
   
@@ -775,7 +788,7 @@ mi_pool = function( ests,
     B = (1 / (m-1)) * sum( ( ests - mean(ests) )^2 )
     # see Marshall "Combining estimates" paper, pg 3
     se.pool = sqrt( Ubar + (1 + (1/m)) * B ) 
-
+    
     
     ##### CI and P-value #####
     # Dong & Peng (2013), pg 5
@@ -785,7 +798,7 @@ mi_pool = function( ests,
     vm = (m-1) * ( 1 + (1/r) )^2
     tcrit = qt(0.975, df = vm)
     
-
+    
     lo.pool = est.pool - tcrit * se.pool
     hi.pool = est.pool + tcrit * se.pool
     t.pool = abs(est.pool) / se.pool
@@ -798,7 +811,7 @@ mi_pool = function( ests,
                         pval = p.pool ) )
   }
   
-
+  
 }
 
 
