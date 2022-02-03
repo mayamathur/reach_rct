@@ -365,7 +365,7 @@ if ( impute.from.scratch == TRUE ) {
     
     for (i in 1:M) {
       impDat = complete(imps, i)
-      write.csv( impDat,
+      write_csv( impDat,
                  paste("imputed_dataset_prepped", i, ".csv", sep="") )
     }
   }

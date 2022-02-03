@@ -283,6 +283,7 @@ report_gee_table = function(dat,
                 data = dat )
   
   est = coef(mod)
+  se = summary(mod)$geese$mean$san.se
   lo = coef(mod) - qnorm(.975) * summary(mod)$geese$mean$san.se
   hi = coef(mod) + qnorm(.975) * summary(mod)$geese$mean$san.se
   Z = abs( coef(mod) / summary(mod)$geese$mean$san.se ) 
@@ -293,6 +294,7 @@ report_gee_table = function(dat,
   res = data.frame( analysis = analysisLabel,
                     variable = names(est),
                     est = est, 
+                    se = se,
                     lo = lo,
                     hi = hi,
                     pval = pval,
@@ -315,29 +317,25 @@ report_gee_table = function(dat,
 analyze_one_outcome = function(missMethod,
                                 yName,
                                formulaString,
-                               analysisLabel) {
+                               analysisLabel,
+                               .results.dir) {
   
-  #@TEST ONLY
-  missMethod = "CC"
-  yName = primYNames[1]
-  formulaString = "T2_BSI ~ treat + site"
-  analysisLabel = "set1_T2_BSI"
-  
-  #bm: just about to start specializing this for REACH :)
-  # you got thisssss
+
+  # #@TEST ONLY
+  # missMethod = "MI"
+  # yName = primYNames[1]
+  # formulaString = "T2_BSI ~ treat + site"
+  # analysisLabel = "set1_T2_BSI"
   
   # # for Bonferroni
   # n.secY = sum( length(secFoodY), length(psychY) )
   # ( alpha2 = 0.05 / n.secY ) # Bonferroni-adjusted alpha
   
 
-  if ( exists("res.raw") ) rm(res.raw)
+  if ( exists("res.raw") ) suppressWarnings( rm(res.raw) )
   
 
-
-  
-  #@TEST ONLY
-  
+  # ~ Fit Model(s) with MI or CC ------------------------------
   if ( missMethod == "MI" ) {
     mi.res = lapply( imps, function(.d) report_gee_table(dat = .d,
                                                          formulaString = formulaString,
@@ -346,49 +344,51 @@ analyze_one_outcome = function(missMethod,
   }
   
   if ( missMethod == "CC" ) {
-    mi.res = report_gee_table(dat = d,
+    mi.res = list( report_gee_table(dat = d,
                       formulaString = formulaString,
                       analysisLabel = analysisLabel,
-                      write.dir = NA)
+                      write.dir = NA) )
   }
+  
+
+  # ~ Pool Imputations if Applicable ------------------------------
   
   # pool the imputations
   # might have only 1 row if we're doing CC analysis
-  if ( missMethod == "MI" ) {
-    mi.res = do.call(what = rbind, mi.res)
-    part1 = mi_pool(ests = mi.res$est, ses = mi.res$se)
-    part2 = mi_pool(ests = mi.res$g, ses = mi.res$g.se)
-    names(part2) = paste( "g.", names(part2), sep = "" )
-    names(part2)[ names(part2) == "g.est" ] = "g"
-    new.row = cbind(part1, part2)
-    
-  } else if ( missMethod == "CC" ) {
-    # no need to pool in this case
-    new.row = mi.res
-  }
-  
-  # might have only 1 row if we're doing CC analysis
-  if ( missMethod == "MI" ) {
-    mi.res = do.call(what = rbind, mi.res)
-    part1 = mi_pool(ests = mi.res$est, ses = mi.res$se)
-    part2 = mi_pool(ests = mi.res$g, ses = mi.res$g.se)
-    names(part2) = paste( "g.", names(part2), sep = "" )
-    names(part2)[ names(part2) == "g.est" ] = "g"
-    new.row2 = cbind(part1, part2)
-    
-  } else if ( missMethod == "CC" ) {
-    # no need to pool in this case
-    new.row2 = mi.res
-  }
-  
-  # overwrite new.row to actually contain both rows
-  # first row is all subjects
-  # second row is targetDemoSimple = TRUE only
-  new.row = bind_rows(new.row, new.row2)
+ res.raw = mi_pool_all(mi.res)
 
+
+  # ~ Prettify and Write Results Tables ------------------------------
+  
+  res.raw = res.raw %>% add_column(.before = 1,
+                          analysis = analysisLabel,
+                          formulaString = formulaString)
+  
+  #bm
+  # this part breaks for CC because doesn't have pvalBonf
+  digits = 2
+  res.nice = data.frame( analysis = res.raw$analysis,
+                         varName = row.names(res.raw),
+                         est = stat_CI( round(res.raw$est, digits),
+                                        round(res.raw$lo, digits),
+                                        round(res.raw$hi, digits) ),
+                         
+                         pval = format.pval(res.raw$pval, eps  = 0.0001),
+                         pvalBonf = format.pval(res.raw$pvalBonf, eps = 0.0001) )
   
   
   
+  setwd(.results.dir)
+  
+  if (missMethod == "CC") missingString = "completeCase"
+  if (missMethod == "MI") missingString = "multImp"
+  
+  string = paste( analysisLabel, yName, missingString, "_gee_table_raw", ".csv", sep="_" )
+  write_csv(res.raw, string)
+  
+  string = paste( analysisLabel, yName, missingString, "_gee_table_pretty", ".csv", sep="_" )
+  write_csv(res.nice, string)
+
   # # FROM EV:
   # 
   # if ( study %in% c(1,2,3) ) {
@@ -742,5 +742,113 @@ analyze_one_outcome = function(missMethod,
 }
 
 
+# for a single coefficient
+# ests: ests from m imputations
+# ses: ses from m imputations
+mi_pool = function( ests,
+                    ses,
+                    # below are just for the m=1 (complete-case) possibility
+                    los = NA,
+                    his = NA,
+                    pvals = NA
+                    ){
+  
+  m = length(ests)
+  
+  if ( m == 1 ){
+    return( data.frame( est = ests,
+                        se = ses, 
+                        lo = los,
+                        hi = his,
+                        pval = pvals ) )
+  }
+  
+  if ( m > 1 ) {
+    ##### Pooled Estimate #####
+    est.pool = mean(ests)
+    
+    ##### Pooled SE #####
+    # Dong & Peng (2013), pg 5
+    # within-imputation variance
+    Ubar = mean( ses^2 )
+    # between-imputation variance
+    B = (1 / (m-1)) * sum( ( ests - mean(ests) )^2 )
+    # see Marshall "Combining estimates" paper, pg 3
+    se.pool = sqrt( Ubar + (1 + (1/m)) * B ) 
+
+    
+    ##### CI and P-value #####
+    # Dong & Peng (2013), pg 5
+    # relative increase in variance due to missing data
+    r = ( ( 1 + (1/m) ) * B ) / Ubar
+    # degrees of freedom without the small-sample adjustment
+    vm = (m-1) * ( 1 + (1/r) )^2
+    tcrit = qt(0.975, df = vm)
+    
+
+    lo.pool = est.pool - tcrit * se.pool
+    hi.pool = est.pool + tcrit * se.pool
+    t.pool = abs(est.pool) / se.pool
+    p.pool = 2 * ( 1 - pt(t.pool, df = vm) )
+    
+    return( data.frame( est = est.pool,
+                        se = se.pool, 
+                        lo = lo.pool,
+                        hi = hi.pool,
+                        pval = p.pool ) )
+  }
+  
+
+}
 
 
+
+
+# for all coefficients in model
+# mi.res: the list with length M
+mi_pool_all = function(.mi.res){
+  
+  coefNames = as.list( names( .mi.res$coefficients) )
+  # get number of coefs from first imputation
+  nCoefs = nrow(.mi.res[[1]] )
+  
+  # list with one element per coefficient
+  # first for the coeffs on the raw scale
+  temp = lapply( 1:nCoefs, function(i) {
+    
+    # to mi_pool, pass ests and SEs extracted from each imputation in the list
+    raw = mi_pool( ests = unlist( lapply( .mi.res, function(j) j$est[i] ) ),
+                   ses = unlist( lapply( .mi.res, function(j) j$se[i] ) ),
+                   los = unlist( lapply( .mi.res, function(j) j$lo[i] ) ),
+                   his = unlist( lapply( .mi.res, function(j) j$hi[i] ) ),
+                   pvals = unlist( lapply( .mi.res, function(j) j$pval[i] ) ) )
+    
+    raw
+    
+    # SMD = mi_pool( ests = unlist( lapply( .mi.res, function(j) j$g[i] ) ),
+    #                ses = unlist( lapply( .mi.res, function(j) j$g.se[i] ) ) )
+    # names(SMD) = paste( "g.", names(SMD), sep = "" )
+    
+    #cbind(raw, SMD)
+  } )
+  
+  # yields dataset
+  .res = do.call( what = rbind, temp )
+  row.names(.res) = row.names(.mi.res[[1]])
+  
+  
+  # add Bonferroni p-values, counting only the effect modifiers 
+  #  using the fact that their names have colons
+  modNames = row.names(.res)[ grepl( pattern = ":", x = row.names(.res) ) ]
+  nMods = length(modNames)
+  .res$pvalBonf = NA
+  .res$pvalBonf[ row.names(.res) %in% modNames ] = pmin( 1, .res$pval[ row.names(.res) %in% modNames ] * nMods )
+  
+  return(.res)
+}
+
+# make a string for estimate and CI
+stat_CI = function(est, lo, hi){
+  paste( est, " [", lo, ", ", hi, "]", sep = "" )
+}
+# stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )

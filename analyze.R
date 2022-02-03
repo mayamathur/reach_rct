@@ -45,18 +45,39 @@ imps <<- lapply( to.read,
                  function(x) suppressMessages(read_csv(x)) )
 
 
+names(imps[[1]])
+meanNA(imps[[1]]$T2_TRIM)
+meanNA(imps[[2]]$T2_TRIM)
+
+
 # SET 1 GEE MODELS -----------------------------------------------------------
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
+#@need to add Bonferronis
+for ( .y in primYNames ) {
+  
+  .formulaString = paste("T2_", .y, " ~ treat + site", sep = "" )
 
-# test the fn
+  
+  for ( .missMethod in c("MI", "CC") ) {
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 1/", missingString, sep = "" )
+    
+    analyze_one_outcome( missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         analysisLabel = "set1",
+                         .results.dir = .results.dir )
+    
+    
+  }
+}
 
-# example for main analyses (to be done for each prim and secY)
-report_gee_table(dat = d,
-                 formulaString = "T2_BSI ~ treat + site",
-                 analysisLabel = "set1_T2_BSI",
-                 write.dir = results.aux.dir)
+
 
 
 # SET 2 GEE MODELS -----------------------------------------------------------
