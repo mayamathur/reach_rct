@@ -2,11 +2,8 @@
 # NOTES -----------------------------------------------------------
 
 # Models that need to be fit:
-# - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
-# - GEE of primary Y's ~ treat*T1_TFS(binary) + site 
-# - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
-
 # - GEE of all time points (need data in long format)
+# - Maybe fill in #@ things?
 
 # Game plan:
 # - Fn similar to my_ols_hc0_all, but arg is the entire model formula
