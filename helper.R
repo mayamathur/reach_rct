@@ -311,33 +311,45 @@ report_gee_table = function(dat,
 
 # uses a lot of global vars, like study
 # missMethod: "MI" or "CC"
-analyze_all_outcomes = function(missMethod) {
+# yName: outcomes to analyze
+analyze_one_outcome = function(missMethod,
+                                yName,
+                               formulaString,
+                               analysisLabel) {
+  
+  #@TEST ONLY
+  missMethod = "CC"
+  yName = primYNames[1]
+  formulaString = "T2_BSI ~ treat + site"
+  analysisLabel = "set1_T2_BSI"
   
   #bm: just about to start specializing this for REACH :)
   # you got thisssss
   
-  # for Bonferroni
-  n.secY = sum( length(secFoodY), length(psychY) )
-  ( alpha2 = 0.05 / n.secY ) # Bonferroni-adjusted alpha
+  # # for Bonferroni
+  # n.secY = sum( length(secFoodY), length(psychY) )
+  # ( alpha2 = 0.05 / n.secY ) # Bonferroni-adjusted alpha
   
-  # outcomes to analyze
-  toAnalyze = c("mainY", secFoodY, psychY )
-  if ( study == 2 ) toAnalyze = c( "intentionCont", toAnalyze )
-  
-  
-  
+
   if ( exists("res.raw") ) rm(res.raw)
   
+
+
   
+  #@TEST ONLY
   
   if ( missMethod == "MI" ) {
-    mi.res = lapply( imps, function(.d) my_ttest(yName = i,
-                                                 dat = .d) )
+    mi.res = lapply( imps, function(.d) report_gee_table(dat = .d,
+                                                         formulaString = formulaString,
+                                                         analysisLabel = analysisLabel,
+                                                         write.dir = NA) )
   }
   
   if ( missMethod == "CC" ) {
-    mi.res = my_ttest(yName = i,
-                      dat = d)
+    mi.res = report_gee_table(dat = d,
+                      formulaString = formulaString,
+                      analysisLabel = analysisLabel,
+                      write.dir = NA)
   }
   
   # pool the imputations
@@ -373,6 +385,7 @@ analyze_all_outcomes = function(missMethod) {
   # first row is all subjects
   # second row is targetDemoSimple = TRUE only
   new.row = bind_rows(new.row, new.row2)
+
   
   
   

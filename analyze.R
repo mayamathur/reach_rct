@@ -13,6 +13,9 @@
 # - Then should be able to modify analyze_all_outcomes to handle MI, etc.
 
 
+# For read-me:
+# - Explain why it's fine that imps have missing data on aux vars like income
+
 # PRELIMINARIES -----------------------------------------------------------
 
 library(here)
@@ -21,18 +24,25 @@ setwd(here())
 source("preliminaries.R")
 
 
-##### Set Parameters Here #####
+# Set Parameters Here --------------------------------
 # overwrite old results?
 overwrite.res = FALSE
 
 # should sanity checks be run?
 run.sanity = FALSE
 
-# read in prepped data
+# Read in data  --------------------------------
 setwd(prepped.data.dir)
 d = read_csv("prepped_data.csv") 
 expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
+
+# Read in imputations  --------------------------------
+# read in the imputations as a list rather than a mids object so that we can pool manually
+setwd(imputed.data.dir)
+to.read = list.files()[ grepl( pattern = "prepped", x = list.files() ) ]
+imps <<- lapply( to.read,
+                 function(x) suppressMessages(read_csv(x)) )
 
 
 # SET 1 GEE MODELS -----------------------------------------------------------

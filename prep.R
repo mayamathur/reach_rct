@@ -282,6 +282,10 @@ missmap(d)
 
 # ~ Make imputations --------------------------------------
 
+
+# NEED TO FIX THIS BECAUSE IMPS HAVE MISSING DATA!
+
+
 if ( impute.from.scratch == TRUE ) {
   ini = mice(d, m=1, maxit = 0 )
   
@@ -290,8 +294,21 @@ if ( impute.from.scratch == TRUE ) {
   ini$method
   
   # set variables to be imputed, and those to use as predictors
-  varsToImpute = names(d)[ !names(d) %in% c("ID", unusedYnamesWide, demoVarsAux) ]
-  impModelPredictors = c(primYNamesWide, secYNamesWide, demoVarsToAnalyze, unusedYnamesWide, demoVarsAux)
+  varsToImpute = names(d)[ !names(d) %in% c("ID",
+                                            "uid",
+                                            "site",
+                                            "treat",
+                                            unusedYnamesWide,
+                                            demoVarsAux) ]
+  
+  #@TEMP: REMOVED SITE AND DEMOVARSAUX BECAUSE THEY CAUSED LOGGEDEVENTS AND MISSING DATA
+  impModelPredictors = c(primYNamesWide,
+                         secYNamesWide,
+                         demoVarsToAnalyze,
+                         unusedYnamesWide
+                         #demoVarsAux
+                         )
+  impModelPredictors = impModelPredictors[ !impModelPredictors %in% c("site", "gender")]
   
   # make own predictor matrix by modifying mice's own predictor matrix to keep structure the same
   #  from mice docs: "Each row corresponds to a variable block, i.e., a set of variables to be imputed. A value of 1 means that the column variable is used as a predictor for the target block (in the rows)"
@@ -309,7 +326,8 @@ if ( impute.from.scratch == TRUE ) {
   myMethod = ini$method
   myMethod[ names(myMethod) %in% varsToImpute ] = "pmm"
   myMethod[ !( names(myMethod) %in% varsToImpute ) ] = ""
-  table(myMethod)
+  myMethod
+
   
   imps = mice( d,
                m=M,  
@@ -317,6 +335,7 @@ if ( impute.from.scratch == TRUE ) {
                method = myMethod,
                seed = 451)
   
+  imps$loggedEvents
   imps$loggedEvents$dep
   
   # make sure there is no missing data in the imputations
@@ -324,6 +343,12 @@ if ( impute.from.scratch == TRUE ) {
                        2,
                        function(x) any(is.na(x)) ) # should be FALSE
   
+  fake = complete(imps,1)
+  table(is.na(fake$T2_TRIM))
+  table(is.na(d$T2_TRIM))
+  
+  table(is.na(fake$T2_DTFS))
+  table(is.na(d$T2_DTFS))
 
   # **important: any.missing WILL have missing values on auxiliary vars used to make the imputation model
   # because we're not imputing those vars
