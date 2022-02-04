@@ -101,75 +101,7 @@ d = read_csv("prepped_data.csv")
 expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
 
-# BREAKS FOR DIFFERENT REASON:
-# invalid type (list) for variable '(id)'
-#@Mancl correction
-# https://quantscience.rbind.io/courses/psyc575/rcode9/
-temp = d %>% filter(!is.na(T2_TRIM))
-temp$fake = as.numeric(as.factor(temp$site))
-# critical: because of the silly way GEE.var.md handles the id variable (visible if you
-#  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
-#  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
-temp$id = as.factor(temp$site)
-mod = GEE.var.md(T2_TRIM ~ treat, 
-                 data = temp,  
-                 id = id,
-                 corstr = "exchangeable")
-
-# from Bie paper:
-# https://github.com/RuofanBie9729/GEE-vs-MMM/blob/main/hypothesis%20test/simD100.R
-# md.exch <- GEE.var.md(binY~time+Xe,id=id,family=binomial, data = newdata1,corstr="exchangeable") 
-# wald_stat <- (summary(gee.fit)[[6]][,1]/sqrt(md.exch$cov.beta))^2
-# p_value <- 1-pchisq(wald_stat, 1)
-# GEE_cor <- rbind(GEE_cor,c(i, wald_stat, p_value))
-
-
-
-
-# WORKS
-# id = uid instead of site
-# look for issues with model estimability
-temp = d %>% filter(!is.na(T2_TRIM))
-# with id = uid, this fits fine
-mod = geeglm( T2_TRIM ~ treat + site,
-              id = uid,  
-              family = gaussian,
-              corstr = "exchangeable",
-              data = temp )
-
-# # HANGS FOREVER
-# # NO fixed effects of site, but do have id = site
-# mod = geeglm( T2_TRIM ~ treat,
-#               id = site,  
-#               family = gaussian,
-#               corstr = "exchangeable",
-#               data = temp )
-
-
-#bm
-
-library(gee)
-mod  = gee( T2_TRIM ~ treat + site,
-     id = uid,  
-     family = gaussian,
-     corstr = "exchangeable",
-     data = temp )
-
-
-# this error: NA/NaN/Inf in foreign function call (arg 3)
-# means you need as.factor for the id variable
-
-# starting with exchangeable structure yields warning about cor structure being non-independent, so I'm now using the default of independence
-mod  = gee( T2_TRIM ~ treat + site,
-            id = as.factor(site),  
-            #corstr = "exchangeable",
-            data = temp )
-
-# take-homes: if geeglm hangs forever, try gee instead
-
-
 # test loop
-
 analyze_one_outcome( missMethod = "CC",
                      yName = "BSI",
                      formulaString = "T2_BSI ~ treat + site",
