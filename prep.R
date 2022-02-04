@@ -36,7 +36,7 @@ overwrite.prepped.data = TRUE
 run.sanity = FALSE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = TRUE
+impute.from.scratch = FALSE
 # number of imputations
 #@increase later
 M = 3
@@ -240,30 +240,20 @@ for ( .v in c(primYNames, secYNames, unusedYnames) ) {
 summary( lm(T2_TRIM ~ treat, data = d) )
 summary( lm(T2_DTFS ~ treat, data = d) )
 
-
-# TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
-
-#@move this to analyze.R
-
-# stratify demographics by treatment group
-t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
-t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
-
-# look for dimension mismatches caused by missing categories in one treatment group
-dim(t1.treat); dim(t1.cntrl)
-t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
-
-#@there's a lot of missing data on ethnicity
+# save intermediate dataset
+write_interm(d, "prepped_data_intermediate1.csv")
 
 
 
-#CreateTableOne( data = d %>% select( c(treat, demoVars, ) ) )
 
 # IMPUTATION IN WIDE FORMAT -----------------------------------------------------------
 
-# ~ Missingness --------------------------------------
+# read in intermediate dataset
+d = read_interm("prepped_data_intermediate1.csv")
 
 
+
+# ~ Look at Missingness --------------------------------------
 
 t = d %>% summarise( across( everything(), ~ round( 100*mean( !is.na(.x) ) ) ) )
 t = as.data.frame( t(t) ) # transpose it
@@ -284,7 +274,8 @@ missmap(d)
 
 
 # NEED TO FIX THIS BECAUSE IMPS HAVE MISSING DATA!
-
+# NOTE: In git commit history, you'll see there was a time when imputation worked just fine. That was
+#  before I added the variable recodings above.
 
 if ( impute.from.scratch == TRUE ) {
   ini = mice(d, m=1, maxit = 0 )
@@ -373,19 +364,45 @@ if ( impute.from.scratch == TRUE ) {
 }
 
 
-# WIDE TO LONG -----------------------------------------------------------
-
-# will need to do this for each imputation, too
-# return to this for the sensitivity analysis
+# POST-IMPUTATION DATA WRANGLING -----------------------------------------------------------
 
 
-#@will need to edit col names in here after Man Yee separates BSI, etc.
 
-# close, but this has rows for each outcome
-# see "anscombe" example here
-l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
-                        names_to = c(".value", "set"),
-                        names_sep = "_" )
+
+wrangle_post_imputation = function(.dat) {
+  
+  # ~ Make long dataset ------------------------------------
+  # close, but this has rows for each outcome
+  # see "anscombe" example here
+  
+  #@will need to edit col names in here after Man Yee separates BSI, etc.
+  
+  # l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
+  #                         names_to = c(".value", "set"),
+  #                         names_sep = "_" )
+  
+  
+  # ~ Make new variables ------------------------------------
+  
+  # vars that weren't useful to carry through imputation process
+  # indicator for having any missingness on a T1 primary outcome
+  message("You'll need to edit var names here after Man Yee recodes")
+   .dat = .dat %>% rowwise() %>%
+      mutate( anyNA.T1.primY = any( is.na(T1_BSI), is.na(T1_TRIM) ),
+              anyNA.T2.primY = any( is.na(T2_BSI), is.na(T2_TRIM) ),
+              anyNA.T3.primY = any( is.na(T3_BSI), is.na(T3_TRIM) ) )
+  
+  # sanity check on this
+   if ( run.sanity == TRUE ) {
+     mine = is.na(.dat$T1_BSI) | is.na(.dat$T1_TRIM)
+     expect_equal( .dat$anyNA.T1.primY, mine )
+   }
+  
+  return(.dat)
+}
+
+d = wrangle_post_imputation(.dat = d)
+
 
 
 # SAVE FINAL DATASET -----------------------------------------------------------

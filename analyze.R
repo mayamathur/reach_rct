@@ -48,6 +48,46 @@ meanNA(imps[[1]]$T2_TRIM)
 meanNA(imps[[2]]$T2_TRIM)
 
 
+
+# SANITY CHECKS -----------------------------------------------------------
+
+
+if ( run.sanity == TRUE ) {
+  
+  # ~ Site-specific Table 1's -----------------------------------
+  
+  
+  # stratify demographics by treatment group
+  t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
+  t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
+  
+  # look for dimension mismatches caused by missing categories in one treatment group
+  dim(t1.treat); dim(t1.cntrl)
+  t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
+  
+  
+  
+}
+
+
+# TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
+
+#@move this to analyze.R
+
+# stratify demographics by treatment group
+t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
+t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
+
+# look for dimension mismatches caused by missing categories in one treatment group
+dim(t1.treat); dim(t1.cntrl)
+t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
+
+#@there's a lot of missing data on ethnicity
+
+
+
+#CreateTableOne( data = d %>% select( c(treat, demoVars, ) ) )
+
 # SET 1 GEE MODELS -----------------------------------------------------------
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)

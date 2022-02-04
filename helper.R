@@ -63,6 +63,23 @@ vr = function(){
 
 # DATA PREP HELPERS  -----------------------------------------------------------
 
+
+# read/write intermediate work
+write_interm = function(x, filename){
+  setwd(prepped.data.dir)
+  setwd("Intermediate prepped datasets")
+  write.csv(x, filename)
+}
+
+read_interm = function(filename){
+  setwd(prepped.data.dir)
+  setwd("Intermediate prepped datasets")
+  read.csv(filename)
+}
+
+
+
+
 # overwrites subscales with reverse-coded versions and creates a new *standardized* composite
 #  variable from the subscales' sum
 #
