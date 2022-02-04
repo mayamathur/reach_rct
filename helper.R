@@ -322,6 +322,7 @@ report_gee_table = function(dat,
                             formulaString,
                             analysisVarNames,  # for excluding missing data
                             analysisLabel,
+                            corstr = "exchangeable",
                             write.dir = NA){
   
   # exclude missing data
@@ -330,25 +331,61 @@ report_gee_table = function(dat,
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
   
-  browser()
+
+  # version without the Mancl correction
+  # mod = geeglm( eval( parse(text = formulaString) ),
+  #               id = site,  
+  #               family = gaussian,
+  #               corstr = "exchangeable",
+  #               data = dat )
+  # 
+  # est = coef(mod)
+  # se = summary(mod)$geese$mean$san.se
+  # lo = coef(mod) - qnorm(.975) * summary(mod)$geese$mean$san.se
+  # hi = coef(mod) + qnorm(.975) * summary(mod)$geese$mean$san.se
+  # Z = abs( coef(mod) / summary(mod)$geese$mean$san.se ) 
   
-  #@modify this to use OLS + HC0 standard errors
-  #@add correction in Sebastien paper
-  mod = geeglm( eval( parse(text = formulaString) ),
-                id = site,  
-                family = gaussian,
-                corstr = "exchangeable",
-                data = dat )
+  #browser()
+  
+  # fit GEE (without Mancl correction to SEs) to get coefs
+  mod  = gee( eval( parse(text = formulaString) ),
+              id = as.factor(site),  
+              corstr = corstr,
+              data = dat )
   
   est = coef(mod)
-  se = summary(mod)$geese$mean$san.se
-  lo = coef(mod) - qnorm(.975) * summary(mod)$geese$mean$san.se
-  hi = coef(mod) + qnorm(.975) * summary(mod)$geese$mean$san.se
-  Z = abs( coef(mod) / summary(mod)$geese$mean$san.se ) 
   
-  # @consider using t-dist
-  pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+  # get Mancl-corrected SEs
+  # critical: because of the silly way GEE.var.md handles the id variable (visible if you
+  #  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
+  #  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
+  dat$id = as.factor(dat$site)
+  # this fn ONLY returns the variance estimate, not the coeffs
   
+  
+  # this is prone to saying it is computationally singular
+  
+  tryCatch({
+    SEs.only = GEE.var.md( eval( parse(text = formulaString) ), 
+                           data = dat,  
+                           id = id,  # DON'T CHANGE TO ANOTHER VARIABLE NAME; SEE NOTE ABOVE
+                           corstr = corstr)
+    se = sqrt(SEs.only$cov.beta)
+    lo = est - qnorm(.975) * se
+    hi = est + qnorm(.975) * se
+    Z = abs( est / se )
+    # @consider using t-dist
+    pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+  }, error = function(err) {
+    
+    se <<- NA
+    lo <<- NA
+    hi <<- NA
+    Z <<- NA
+    pval <<- NA
+  })
+  
+
   res = data.frame( analysis = analysisLabel,
                     variable = names(est),
                     est = est, 
@@ -375,6 +412,7 @@ report_gee_table = function(dat,
 analyze_one_outcome = function(missMethod,
                                yName,
                                formulaString,
+                               corstr = "exchangeable",
                                analysisVarNames, # for handling missing data in report_gee_table
                                analysisLabel,
                                .results.dir) {
@@ -400,6 +438,7 @@ analyze_one_outcome = function(missMethod,
                                                          formulaString = formulaString,
                                                          analysisVarNames = analysisVarNames,
                                                          analysisLabel = analysisLabel,
+                                                         corstr = corstr,
                                                          write.dir = NA) )
   }
   
@@ -409,6 +448,7 @@ analyze_one_outcome = function(missMethod,
                                     formulaString = formulaString,
                                     analysisVarNames = analysisVarNames,
                                     analysisLabel = analysisLabel,
+                                    corstr = corstr,
                                     write.dir = NA) )
   }
   

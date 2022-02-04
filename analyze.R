@@ -91,25 +91,43 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
 #@there's a lot of missing data on ethnicity
 
+# DEBUG GEE -----------------------------------------------------------
 
 
 #CreateTableOne( data = d %>% select( c(treat, demoVars, ) ) )
 
-# SET 1 GEE MODELS -----------------------------------------------------------
+setwd(prepped.data.dir)
+d = read_csv("prepped_data.csv") 
+expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
-# - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
+# BREAKS FOR DIFFERENT REASON:
+# invalid type (list) for variable '(id)'
 #@Mancl correction
 # https://quantscience.rbind.io/courses/psyc575/rcode9/
 temp = d %>% filter(!is.na(T2_TRIM))
 temp$fake = as.numeric(as.factor(temp$site))
-
+# critical: because of the silly way GEE.var.md handles the id variable (visible if you
+#  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
+#  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
+temp$id = as.factor(temp$site)
 mod = GEE.var.md(T2_TRIM ~ treat, 
                  data = temp,  
-                 id = "fake",  # variable itself need to be string
+                 id = id,
                  corstr = "exchangeable")
 
+# from Bie paper:
+# https://github.com/RuofanBie9729/GEE-vs-MMM/blob/main/hypothesis%20test/simD100.R
+# md.exch <- GEE.var.md(binY~time+Xe,id=id,family=binomial, data = newdata1,corstr="exchangeable") 
+# wald_stat <- (summary(gee.fit)[[6]][,1]/sqrt(md.exch$cov.beta))^2
+# p_value <- 1-pchisq(wald_stat, 1)
+# GEE_cor <- rbind(GEE_cor,c(i, wald_stat, p_value))
 
+
+
+
+# WORKS
+# id = uid instead of site
 # look for issues with model estimability
 temp = d %>% filter(!is.na(T2_TRIM))
 # with id = uid, this fits fine
@@ -119,22 +137,58 @@ mod = geeglm( T2_TRIM ~ treat + site,
               corstr = "exchangeable",
               data = temp )
 
-# NO fixed effects of site, but do have 
-mod = geeglm( T2_TRIM ~ treat,
-              id = site,  
-              family = gaussian,
-              corstr = "exchangeable",
-              data = temp )
+# # HANGS FOREVER
+# # NO fixed effects of site, but do have id = site
+# mod = geeglm( T2_TRIM ~ treat,
+#               id = site,  
+#               family = gaussian,
+#               corstr = "exchangeable",
+#               data = temp )
 
 
 #bm
 
-# from Bie paper:
-# https://github.com/RuofanBie9729/GEE-vs-MMM/blob/main/hypothesis%20test/simD100.R
-# md.exch <- GEE.var.md(binY~time+Xe,id=id,family=binomial, data = newdata1,corstr="exchangeable") 
-# wald_stat <- (summary(gee.fit)[[6]][,1]/sqrt(md.exch$cov.beta))^2
-# p_value <- 1-pchisq(wald_stat, 1)
-# GEE_cor <- rbind(GEE_cor,c(i, wald_stat, p_value))
+library(gee)
+mod  = gee( T2_TRIM ~ treat + site,
+     id = uid,  
+     family = gaussian,
+     corstr = "exchangeable",
+     data = temp )
+
+
+# this error: NA/NaN/Inf in foreign function call (arg 3)
+# means you need as.factor for the id variable
+
+# starting with exchangeable structure yields warning about cor structure being non-independent, so I'm now using the default of independence
+mod  = gee( T2_TRIM ~ treat + site,
+            id = as.factor(site),  
+            #corstr = "exchangeable",
+            data = temp )
+
+# take-homes: if geeglm hangs forever, try gee instead
+
+
+# test loop
+
+analyze_one_outcome( missMethod = "CC",
+                     yName = "BSI",
+                     formulaString = "T2_BSI ~ treat + site",
+                     analysisVarNames = c("T2_BSI", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "independence",
+                     
+                     .results.dir = "/Users/mmathur/Dropbox/Personal computer/Independent studies/2019/Tyler's forgiveness RCT/Linked to OSF (REACH)/Results from R/Analysis set 1/Complete-case" )
+
+
+# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
+# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
+
+
+# SET 1 GEE MODELS -----------------------------------------------------------
+
+
+# - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
 
 #@need to add Bonferronis
@@ -146,6 +200,8 @@ for ( .y in primYNames ) {
   
   for ( .missMethod in c("CC", "MI") ) {
     
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
@@ -156,6 +212,7 @@ for ( .y in primYNames ) {
                          formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site"),
                          analysisLabel = "set1",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     
