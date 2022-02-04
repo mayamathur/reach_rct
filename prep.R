@@ -20,6 +20,10 @@ source("preliminaries.R")
 
 
 ##### Set Parameters Here #####
+
+# use scrambled treatment variable?
+scramble.treat = TRUE
+
 # overwrite old results?
 overwrite.res = FALSE
 
@@ -38,7 +42,6 @@ M = 3
 # read in raw data
 setwd(raw.data.dir)
 d = read_csv("RCT Compiled dataset.csv") 
-
 
 
 # SIMPLE SANITY CHECKS -----------------------------------------------------------
@@ -89,6 +92,9 @@ table(d$site)
 d$treat = recode(d$Group,
                  `1` = 1,
                  `2` = 0)
+
+if ( scramble.treat == TRUE ) d$treat = rbinom( n = nrow(d), size = 1, prob = 0.5 )
+
 
 #@ subject 171 has gender=0, but that's not in codebook
 d$gender = recode(d$GENDER,
@@ -350,6 +356,8 @@ if ( impute.from.scratch == TRUE ) {
     
     for (i in 1:M) {
       impDat = complete(imps, i)
+      impDat = wrangle_post_imputation(impDat)
+      setwd(imputed.data.dir)
       write_csv( impDat,
                  paste("imputed_dataset_prepped", i, ".csv", sep="") )
     }
@@ -365,8 +373,6 @@ if ( impute.from.scratch == TRUE ) {
 d = read_interm("prepped_data_intermediate1.csv")
 
 
-
-# - *Dichotomize baseline trait forgiveness
 
 
 wrangle_post_imputation = function(.dat) {

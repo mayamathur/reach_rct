@@ -330,9 +330,12 @@ report_gee_table = function(dat,
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
   
+  browser()
+  
+  #@modify this to use OLS + HC0 standard errors
   #@add correction in Sebastien paper
   mod = geeglm( eval( parse(text = formulaString) ),
-                id = uid,  #@ participant unique ID
+                id = site,  
                 family = gaussian,
                 corstr = "exchangeable",
                 data = dat )

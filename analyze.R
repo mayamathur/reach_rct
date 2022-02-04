@@ -9,6 +9,7 @@
 # - Fn similar to my_ols_hc0_all, but arg is the entire model formula
 # - Then should be able to modify analyze_all_outcomes to handle MI, etc.
 
+# - Remember you currently have a scrambled Tx indicator in prep.R
 
 # For read-me:
 
@@ -98,6 +99,44 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
+#@Mancl correction
+# https://quantscience.rbind.io/courses/psyc575/rcode9/
+temp = d %>% filter(!is.na(T2_TRIM))
+temp$fake = as.numeric(as.factor(temp$site))
+
+mod = GEE.var.md(T2_TRIM ~ treat, 
+                 data = temp,  
+                 id = "fake",  # variable itself need to be string
+                 corstr = "exchangeable")
+
+
+# look for issues with model estimability
+temp = d %>% filter(!is.na(T2_TRIM))
+# with id = uid, this fits fine
+mod = geeglm( T2_TRIM ~ treat + site,
+              id = uid,  
+              family = gaussian,
+              corstr = "exchangeable",
+              data = temp )
+
+# NO fixed effects of site, but do have 
+mod = geeglm( T2_TRIM ~ treat,
+              id = site,  
+              family = gaussian,
+              corstr = "exchangeable",
+              data = temp )
+
+
+#bm
+
+# from Bie paper:
+# https://github.com/RuofanBie9729/GEE-vs-MMM/blob/main/hypothesis%20test/simD100.R
+# md.exch <- GEE.var.md(binY~time+Xe,id=id,family=binomial, data = newdata1,corstr="exchangeable") 
+# wald_stat <- (summary(gee.fit)[[6]][,1]/sqrt(md.exch$cov.beta))^2
+# p_value <- 1-pchisq(wald_stat, 1)
+# GEE_cor <- rbind(GEE_cor,c(i, wald_stat, p_value))
+
+
 #@need to add Bonferronis
 for ( .y in primYNames ) {
   
@@ -105,7 +144,7 @@ for ( .y in primYNames ) {
   .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
 
   
-  for ( .missMethod in c("MI", "CC") ) {
+  for ( .missMethod in c("CC", "MI") ) {
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
@@ -146,7 +185,7 @@ for ( .y in primYNames ) {
     
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
-                         formulaString = .formulaString,
+                         formulaString = .formulaStoring,
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
                          .results.dir = .results.dir )

@@ -892,7 +892,7 @@ format_pval = function( p,
 stat_CI = function(est, lo, hi){
   paste( est, " [", lo, ", ", hi, "]", sep = "" )
 }
-stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
+# stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
 
 # for reproducible manuscript-writing
 # adds a row to the file "stats_for_paper" with a new statistic or value for the manuscript
