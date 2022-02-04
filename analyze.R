@@ -54,17 +54,24 @@ meanNA(imps[[2]]$T2_TRIM)
 
 if ( run.sanity == TRUE ) {
   
-  # ~ Site-specific Table 1's -----------------------------------
+  # ~ Marginal Table 1 with sanity checks -----------------------------------
+  t1 = make_table_one(.d = d,
+                      .include.sanity.checks = TRUE )
   
+  setwd(results.aux.dir)
+  setwd("Marginal and site-specific Table 1's with sanity checks")
+  write_csv(t1, "marginal_table1_cc_sanity.csv")
+
+  # ~ Site-specific Table 1's with sanity checks -----------------------------------
   
-  # stratify demographics by treatment group
-  t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
-  t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
-  
-  # look for dimension mismatches caused by missing categories in one treatment group
-  dim(t1.treat); dim(t1.cntrl)
-  t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
-  
+  for ( .s in unique(d$site) ) {
+    t1 = make_table_one(.d = d %>% filter(site == .s),
+                        .include.sanity.checks = TRUE )
+    
+    setwd(results.aux.dir)
+    setwd("Marginal and site-specific Table 1's with sanity checks")
+    write_csv(t1, paste(.s, "_table1_cc_sanity.csv", sep ="") )
+  }
   
   
 }

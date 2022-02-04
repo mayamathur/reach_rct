@@ -147,6 +147,7 @@ recode_psych_scale = function(.d,
 # num.digits: rounding
 # countNA: should we count NA as its own category for cat and bin01?
 # .tab1: the current table 1 (if NA, starts generating one from scratch)
+# use.spacer.rows: should there be a row of NAs after each set of rows corresponding to a single variable?
 # print: print the table-in-progress?
 table1_add_row = function( x, # vector
                            var.header,  # variable name to use in table
@@ -155,6 +156,7 @@ table1_add_row = function( x, # vector
                            num.digits = 2,
                            countNA = TRUE,
                            .tab1 = NULL,
+                           use.spacer.rows = TRUE,
                            print = FALSE ) {
   
   useNA = ifelse( countNA == TRUE, "ifany", "no" )
@@ -220,6 +222,12 @@ table1_add_row = function( x, # vector
   # add the new row to existing Table 1, if applicable
   if ( !is.null(.tab1) ) .tab1 = rbind(.tab1, new.row)
   else .tab1 = new.row
+  
+  if ( use.spacer.rows == TRUE ) .tab1 = add_row(.tab1, Characteristic = "", Summary = "")
+  
+  # avoid NA's that are next to headers
+  .tab1[ is.na(.tab1) ] = ""
+  
   if ( print == TRUE ) print(.tab1)
   return(.tab1)
 }
@@ -233,7 +241,8 @@ percTRUE_incl_NA = function(x) {
 
 
 
-make_table_one = function(.d){
+make_table_one = function(.d,
+                          .include.sanity.checks = FALSE){
   t = table1_add_row( x = .d$age,
                       var.header = "Age",  
                       type = "cont",
@@ -280,6 +289,28 @@ make_table_one = function(.d){
                       type = "cat",
                       countNA = TRUE,
                       .tab1 = t)
+  
+  if ( .include.sanity.checks == TRUE ) {
+    
+    t = table1_add_row( x = .d$anyNA.T1.primY,
+                        var.header = "Missing any T1 primary Y",  
+                        type = "bin01",
+                        countNA = TRUE,
+                        .tab1 = t)
+    
+    t = table1_add_row( x = .d$anyNA.T2.primY,
+                        var.header = "Missing any T2 primary Y",  
+                        type = "bin01",
+                        countNA = TRUE,
+                        .tab1 = t)
+    
+    t = table1_add_row( x = .d$anyNA.T2.primY,
+                        var.header = "Missing any T3 primary Y",  
+                        type = "bin01",
+                        countNA = TRUE,
+                        .tab1 = t)
+    
+  }
   
   
   return(t)
