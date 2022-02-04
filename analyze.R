@@ -101,6 +101,7 @@ d = read_csv("prepped_data.csv")
 expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
 
+
 ### Outcome BSI
 # independent working structure: gee WORKS; Mancl FAILS
 analyze_one_outcome( missMethod = "CC",
@@ -215,9 +216,10 @@ for ( .y in primYNames ) {
     
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
-                         formulaString = .formulaStoring,
+                         formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     
@@ -251,6 +253,7 @@ for ( .y in c(primYNames, secYNames) ) {
                          formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSI", "T1_TRIM"),
                          analysisLabel = "set3",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     

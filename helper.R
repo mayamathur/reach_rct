@@ -362,9 +362,7 @@ report_gee_table = function(dat,
   dat$id = as.factor(dat$site)
   # this fn ONLY returns the variance estimate, not the coeffs
   
-  
-  # this is prone to saying it is computationally singular
-  
+  # this is prone to being computationally singular
   tryCatch({
     SEs.only = GEE.var.md( eval( parse(text = formulaString) ), 
                            data = dat,  
