@@ -101,7 +101,8 @@ d = read_csv("prepped_data.csv")
 expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
 
-# test loop
+### Outcome BSI
+# independent working structure: gee WORKS; Mancl FAILS
 analyze_one_outcome( missMethod = "CC",
                      yName = "BSI",
                      formulaString = "T2_BSI ~ treat + site",
@@ -110,8 +111,48 @@ analyze_one_outcome( missMethod = "CC",
                      
                      corstr = "independence",
                      
-                     .results.dir = "/Users/mmathur/Dropbox/Personal computer/Independent studies/2019/Tyler's forgiveness RCT/Linked to OSF (REACH)/Results from R/Analysis set 1/Complete-case" )
+                     .results.dir = NA )
 
+# exch working structure: gee WARNS; Mancl WORKS
+# "Working correlation estimate not positive definite"
+analyze_one_outcome( missMethod = "CC",
+                     yName = "BSI",
+                     formulaString = "T2_BSI ~ treat + site",
+                     analysisVarNames = c("T2_BSI", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "exchangeable",
+                     
+                     .results.dir = NA )
+
+# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
+# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
+
+
+
+### Outcome TRIM
+# independent working structure: gee WORKS; Mancl FAILS
+analyze_one_outcome( missMethod = "CC",
+                     yName = "TRIM",
+                     formulaString = "T2_TRIM ~ treat + site",
+                     analysisVarNames = c("T2_TRIM", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "independence",
+                     
+                     .results.dir = NA )
+
+# exch working structure: gee WARNS; Mancl FAILS
+# "  Working correlation estimate not positive definite"
+analyze_one_outcome( missMethod = "CC",
+                     yName = "TRIM",
+                     formulaString = "T2_TRIM ~ treat + site",
+                     analysisVarNames = c("T2_TRIM", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "exchangeable",
+                     
+                     .results.dir = NA )
 
 # with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
 # with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
