@@ -11,7 +11,6 @@
 
 
 # For read-me:
-# - Explain why it's fine that imps have missing data on aux vars like income
 
 
 # PRELIMINARIES -----------------------------------------------------------
@@ -131,13 +130,11 @@ for ( .y in primYNames ) {
 
 
 # GEE of primary Y's ~ treat*T1_TFS(binary) + site
-#@need to dichotomize T1_TFS and adjust model string below
-
 
 for ( .y in primYNames ) {
   
   .fullYName = paste("T2_", .y, sep = "")
-  .formulaString = paste("T2_", .y, " ~ treat*T1_TrFS + site", sep = "" )
+  .formulaString = paste("T2_", .y, " ~ treat*T1_high_TrFS + site", sep = "" )
   
   
   for ( .missMethod in c("MI", "CC") ) {
@@ -150,7 +147,7 @@ for ( .y in primYNames ) {
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
-                         analysisVarNames = c(.fullYName, "treat", "site", "T1_TrFS"),
+                         analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
                          .results.dir = .results.dir )
     

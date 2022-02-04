@@ -6,14 +6,8 @@
 # - *Dichotomize baseline trait forgiveness
 
 # Questions for Man Yee:
-# - Do any items need reverse-coding?
-# - South Africa is only 54% complete for T2
-# - Shouldn't there be 2 BSI variables?
+# https://github.com/mayamathur/reach_rct/issues
 
-# - Subject 171 has gender 0, but that option isn't in the codebook
-# - race "Colored" vs. "Black African"; the former shows up in South Africa only
-# - codebook says there should be 6 income levels, but in fact there are 9
-# - similar issue with religion, and also there is both Christian and Catholic and Protestant
 # - *Prereg has two different lists of secondaries: (TFS, forbearance, DTFS, flourishing index) vs. (EFS, forbearance, DTFS, flourishing)
 
 
@@ -367,6 +361,12 @@ if ( impute.from.scratch == TRUE ) {
 # POST-IMPUTATION DATA WRANGLING -----------------------------------------------------------
 
 
+# read in intermediate dataset
+d = read_interm("prepped_data_intermediate1.csv")
+
+
+
+# - *Dichotomize baseline trait forgiveness
 
 
 wrangle_post_imputation = function(.dat) {
@@ -385,19 +385,24 @@ wrangle_post_imputation = function(.dat) {
   # ~ Make new variables ------------------------------------
   
   # vars that weren't useful to carry through imputation process
-  # indicator for having any missingness on a T1 primary outcome
+  
+  # indicators for having any missingness on a primary outcome at each time
   message("You'll need to edit var names here after Man Yee recodes")
    .dat = .dat %>% rowwise() %>%
       mutate( anyNA.T1.primY = any( is.na(T1_BSI), is.na(T1_TRIM) ),
               anyNA.T2.primY = any( is.na(T2_BSI), is.na(T2_TRIM) ),
               anyNA.T3.primY = any( is.na(T3_BSI), is.na(T3_TRIM) ) )
-  
   # sanity check on this
    if ( run.sanity == TRUE ) {
      mine = is.na(.dat$T1_BSI) | is.na(.dat$T1_TRIM)
      expect_equal( .dat$anyNA.T1.primY, mine )
    }
-  
+   
+   
+   # median-split T1_TrFS for sensitivity analysis
+   CC.median = median( d$T1_TrFS, na.rm = TRUE )  # will be fairly close to 0 because standardized
+  .dat$T1_high_TrFS = .dat$T1_TrFS > CC.median
+   
   return(.dat)
 }
 
