@@ -354,6 +354,7 @@ report_gee_table = function(dat,
               data = dat )
   
   est = coef(mod)
+  gee.error.code = mod$error
   
   # get Mancl-corrected SEs
   # critical: because of the silly way GEE.var.md handles the id variable (visible if you
@@ -393,6 +394,7 @@ report_gee_table = function(dat,
                     hi = hi,
                     pval = pval,
                     n.analyzed = nrow(dat),
+                    geeErrorCode = gee.error.code,
                     formulaString = formulaString )
   
   if ( !is.na(write.dir) ) {
@@ -466,7 +468,6 @@ analyze_one_outcome = function(missMethod,
                                    analysis = analysisLabel,
                                    formulaString = formulaString)
   
-  #bm
   # this part breaks for CC because doesn't have pvalBonf
   digits = 2
   res.nice = data.frame( analysis = res.raw$analysis,
@@ -491,6 +492,8 @@ analyze_one_outcome = function(missMethod,
     string = paste( analysisLabel, yName, missingString, "_gee_table_pretty", ".csv", sep="_" )
     write_csv(res.nice, string)
   }
+  
+  return(list(res.raw = res.raw, res.nice = res.nice))
 
 }
 
@@ -596,6 +599,10 @@ mi_pool_all = function(.mi.res){
   nMods = length(modNames)
   .res$pvalBonf = NA
   .res$pvalBonf[ row.names(.res) %in% modNames ] = pmin( 1, .res$pval[ row.names(.res) %in% modNames ] * nMods )
+  
+  # only makes sense if there's only one "imputation" (e.g., CC analysis)
+  geeErrorCodes = unlist( lapply( .mi.res, function(j) j$geeErrorCode ) )
+  .res$geeErrorCode = paste(geeErrorCodes)
   
   return(.res)
 }
