@@ -104,7 +104,7 @@ expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
 ### Outcome BSI
 # independent working structure: gee WORKS; Mancl FAILS
-analyze_one_outcome( missMethod = "CC",
+res = analyze_one_outcome( missMethod = "CC",
                      yName = "BSI",
                      formulaString = "T2_BSI ~ treat + site",
                      analysisVarNames = c("T2_BSI", "treat", "site"),
@@ -113,10 +113,11 @@ analyze_one_outcome( missMethod = "CC",
                      corstr = "independence",
                      
                      .results.dir = NA )
+res$res.raw
 
 # exch working structure: gee WARNS; Mancl WORKS
 # "Working correlation estimate not positive definite"
-analyze_one_outcome( missMethod = "CC",
+res = analyze_one_outcome( missMethod = "CC",
                      yName = "BSI",
                      formulaString = "T2_BSI ~ treat + site",
                      analysisVarNames = c("T2_BSI", "treat", "site"),
@@ -125,6 +126,8 @@ analyze_one_outcome( missMethod = "CC",
                      corstr = "exchangeable",
                      
                      .results.dir = NA )
+
+res$res.raw
 
 # with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
 # with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
@@ -164,7 +167,7 @@ analyze_one_outcome( missMethod = "CC",
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
-
+missMethodsToRun = "CC"
 #@need to add Bonferronis
 for ( .y in primYNames ) {
   
@@ -172,8 +175,9 @@ for ( .y in primYNames ) {
   .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
 
   
-  for ( .missMethod in c("CC", "MI") ) {
+  for ( .missMethod in missMethodsToRun ) {
     
+    #bm
     cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
@@ -201,13 +205,14 @@ for ( .y in primYNames ) {
 
 # GEE of primary Y's ~ treat*T1_TFS(binary) + site
 
+missMethodsToRun = "CC"
+
 for ( .y in primYNames ) {
   
   .fullYName = paste("T2_", .y, sep = "")
   .formulaString = paste("T2_", .y, " ~ treat*T1_high_TrFS + site", sep = "" )
   
-  
-  for ( .missMethod in c("MI", "CC") ) {
+  for ( .missMethod in missMethodsToRun ) {
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
@@ -234,6 +239,7 @@ for ( .y in primYNames ) {
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
 
+missMethodsToRun = "CC"
 
 for ( .y in c(primYNames, secYNames) ) {
   
@@ -241,7 +247,7 @@ for ( .y in c(primYNames, secYNames) ) {
   .formulaString = paste("T2_", .y, " ~ treat + site + age + gender + T1_BSI + T1_TRIM", sep = "" )
   
   
-  for ( .missMethod in c("MI", "CC") ) {
+  for ( .missMethod in missMethodsToRun ) {
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"

@@ -356,12 +356,15 @@ report_gee_table = function(dat,
   est = coef(mod)
   # "error" doesn't actually trigger an error, but is basically a warning
   gee.error.code = mod$error
+  corstr.final = corstr  # will be changed below if there was a warning
   
   #bm
   # if there was a warning, try a different corstr
   if ( gee.error.code != 0 ) {
     
+    # possible correlation structures to try
     corstrs = c("exchangeable", "independence")
+    # switch to whichever we haven't tried yet
     new.corstr = corstrs[ corstrs != corstr ]
     
     mod  = gee( eval( parse(text = formulaString) ),
@@ -371,7 +374,7 @@ report_gee_table = function(dat,
     
     est = coef(mod)
     gee.error.code = mod$error
-    
+  corstr.final = new.corstr
   }
   
   # get Mancl-corrected SEs
@@ -413,6 +416,7 @@ report_gee_table = function(dat,
                     pval = pval,
                     n.analyzed = nrow(dat),
                     geeErrorCode = gee.error.code,
+                    corstrFinal = corstr.final,
                     formulaString = formulaString )
   
   if ( !is.na(write.dir) ) {
@@ -621,6 +625,11 @@ mi_pool_all = function(.mi.res){
   # only makes sense if there's only one "imputation" (e.g., CC analysis)
   geeErrorCodes = unlist( lapply( .mi.res, function(j) j$geeErrorCode[1] ) )
   .res$geeErrorCode = paste(geeErrorCodes, collapse = " ")
+  
+  # similar for character string about corstr
+  corstrFinals = unlist( lapply( .mi.res, function(j) j$corstrFinal[1] ) )
+  .res$corstrFinal = paste(corstrFinals, collapse = " ")
+  
   
   return(.res)
 }
