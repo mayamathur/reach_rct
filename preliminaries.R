@@ -16,6 +16,7 @@ library(data.table)
 library(tidyverse)
 library(geepack)
 library(geesmv)
+library(gee)
 
 
 # WORKING DIRECTORIES  -----------------------------------------------------------

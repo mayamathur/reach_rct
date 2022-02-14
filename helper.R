@@ -354,7 +354,25 @@ report_gee_table = function(dat,
               data = dat )
   
   est = coef(mod)
+  # "error" doesn't actually trigger an error, but is basically a warning
   gee.error.code = mod$error
+  
+  #bm
+  # if there was a warning, try a different corstr
+  if ( gee.error.code != 0 ) {
+    
+    corstrs = c("exchangeable", "independence")
+    new.corstr = corstrs[ corstrs != corstr ]
+    
+    mod  = gee( eval( parse(text = formulaString) ),
+                id = as.factor(site),  
+                corstr = new.corstr,
+                data = dat )
+    
+    est = coef(mod)
+    gee.error.code = mod$error
+    
+  }
   
   # get Mancl-corrected SEs
   # critical: because of the silly way GEE.var.md handles the id variable (visible if you
@@ -601,8 +619,8 @@ mi_pool_all = function(.mi.res){
   .res$pvalBonf[ row.names(.res) %in% modNames ] = pmin( 1, .res$pval[ row.names(.res) %in% modNames ] * nMods )
   
   # only makes sense if there's only one "imputation" (e.g., CC analysis)
-  geeErrorCodes = unlist( lapply( .mi.res, function(j) j$geeErrorCode ) )
-  .res$geeErrorCode = paste(geeErrorCodes)
+  geeErrorCodes = unlist( lapply( .mi.res, function(j) j$geeErrorCode[1] ) )
+  .res$geeErrorCode = paste(geeErrorCodes, collapse = " ")
   
   return(.res)
 }
