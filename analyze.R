@@ -167,7 +167,10 @@ analyze_one_outcome( missMethod = "CC",
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
-missMethodsToRun = "CC"
+#missMethodsToRun = "CC"
+
+missMethodsToRun = c("MI")
+
 #@need to add Bonferronis
 for ( .y in primYNames ) {
   
@@ -205,7 +208,7 @@ for ( .y in primYNames ) {
 
 # GEE of primary Y's ~ treat*T1_TFS(binary) + site
 
-missMethodsToRun = "CC"
+#missMethodsToRun = "CC"
 
 for ( .y in primYNames ) {
   
@@ -239,7 +242,7 @@ for ( .y in primYNames ) {
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
 
-missMethodsToRun = "CC"
+#missMethodsToRun = "CC"
 
 for ( .y in c(primYNames, secYNames) ) {
   
