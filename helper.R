@@ -360,8 +360,10 @@ make_table_one = function(.d,
 report_gee_table = function(dat,
                             formulaString,
                             analysisVarNames,  # for excluding missing data
-                            analysisLabel,
+                            analysisLabel,  # will become an identifer column in dataset
                             corstr = "exchangeable",
+                            se.type = "model",  # "model" or "mancl"
+                            
                             write.dir = NA){
   
   # exclude missing data
@@ -371,21 +373,6 @@ report_gee_table = function(dat,
   dat = dat %>% drop_na(analysisVarNames)
   
 
-  # version without the Mancl correction
-  # mod = geeglm( eval( parse(text = formulaString) ),
-  #               id = site,  
-  #               family = gaussian,
-  #               corstr = "exchangeable",
-  #               data = dat )
-  # 
-  # est = coef(mod)
-  # se = summary(mod)$geese$mean$san.se
-  # lo = coef(mod) - qnorm(.975) * summary(mod)$geese$mean$san.se
-  # hi = coef(mod) + qnorm(.975) * summary(mod)$geese$mean$san.se
-  # Z = abs( coef(mod) / summary(mod)$geese$mean$san.se ) 
-  
-  #browser()
-  
   # fit GEE (without Mancl correction to SEs) to get coefs
   mod  = gee( eval( parse(text = formulaString) ),
               id = as.factor(site),  
@@ -420,32 +407,43 @@ report_gee_table = function(dat,
   # critical: because of the silly way GEE.var.md handles the id variable (visible if you
   #  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
   #  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
-  dat$id = as.factor(dat$site)
-  # this fn ONLY returns the variance estimate, not the coeffs
-  
-  # this is prone to being computationally singular
-  tryCatch({
-    SEs.only = GEE.var.md( eval( parse(text = formulaString) ), 
-                           data = dat,  
-                           id = id,  # DON'T CHANGE TO ANOTHER VARIABLE NAME; SEE NOTE ABOVE
-                           corstr = corstr)
-    se = sqrt(SEs.only$cov.beta)
-    lo = est - qnorm(.975) * se
-    hi = est + qnorm(.975) * se
-    Z = abs( est / se )
-    # @consider using t-dist
-    pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
-  }, error = function(err) {
+  if ( se.type == "mancl" ) {
+    dat$id = as.factor(dat$site)
+    # this fn ONLY returns the variance estimate, not the coeffs
     
-    warning("**There was a problem with GEE.var.md!")
-    se <<- NA
-    lo <<- NA
-    hi <<- NA
-    Z <<- NA
-    pval <<- NA
-  })
+    # this is prone to being computationally singular
+    tryCatch({
+      SEs.only = GEE.var.md( eval( parse(text = formulaString) ), 
+                             data = dat,  
+                             id = id,  # DON'T CHANGE TO ANOTHER VARIABLE NAME; SEE NOTE ABOVE
+                             corstr = corstr)
+      se = sqrt(SEs.only$cov.beta)
+      lo = est - qnorm(.975) * se
+      hi = est + qnorm(.975) * se
+      Z = abs( est / se )
+      # @consider using t-dist
+      pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+    }, error = function(err) {
+      
+      warning("**There was a problem with GEE.var.md!")
+      se <<- NA
+      lo <<- NA
+      hi <<- NA
+      Z <<- NA
+      pval <<- NA
+    })
+  }
   
-
+  if ( se.type == "model" ) {
+    summ = summary(mod)
+    est = coef(mod)
+    se = summ$coefficients[,"Robust S.E."]
+    lo = coef(mod) - qnorm(.975) * se
+    hi = coef(mod) + qnorm(.975) * se
+    Z = summ$coefficients[,"Robust z"]
+    pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+  }
+  
   res = data.frame( analysis = analysisLabel,
                     variable = names(est),
                     est = est, 

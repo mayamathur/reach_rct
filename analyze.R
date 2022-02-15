@@ -79,8 +79,6 @@ if ( run.sanity == TRUE ) {
 
 # TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
 
-#@move this to analyze.R
-
 # stratify demographics by treatment group
 t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
 t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
@@ -105,9 +103,9 @@ expect_equal( nrow(d), 4571 )  # from 2022-2-1
 ### Outcome BSI
 # independent working structure: gee WORKS; Mancl FAILS
 res = analyze_one_outcome( missMethod = "CC",
-                     yName = "BSI",
-                     formulaString = "T2_BSI ~ treat + site",
-                     analysisVarNames = c("T2_BSI", "treat", "site"),
+                     yName = "BSIdep",
+                     formulaString = "T2_BSIdep ~ treat + site",
+                     analysisVarNames = c("T2_BSIdep", "treat", "site"),
                      analysisLabel = "set1",
                      
                      corstr = "independence",
@@ -169,7 +167,7 @@ analyze_one_outcome( missMethod = "CC",
 
 #missMethodsToRun = "CC"
 
-missMethodsToRun = c("MI")
+missMethodsToRun = c("CC", "MI")
 
 #@need to add Bonferronis
 for ( .y in primYNames ) {
@@ -180,7 +178,6 @@ for ( .y in primYNames ) {
   
   for ( .missMethod in missMethodsToRun ) {
     
-    #bm
     cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
