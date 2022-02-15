@@ -137,6 +137,45 @@ recode_psych_scale = function(.d,
 
 
 
+
+wrangle_post_imputation = function(.dat) {
+  
+  # ~ Make long dataset ------------------------------------
+  # close, but this has rows for each outcome
+  # see "anscombe" example here
+  
+  #@will need to edit col names in here after Man Yee separates BSI, etc.
+  
+  # l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
+  #                         names_to = c(".value", "set"),
+  #                         names_sep = "_" )
+  
+  
+  # ~ Make new variables ------------------------------------
+  
+  # vars that weren't useful to carry through imputation process
+  
+  # indicators for having any missingness on a primary outcome at each time
+  message("You'll need to edit var names here after Man Yee recodes")
+  .dat = .dat %>% rowwise() %>%
+    mutate( anyNA.T1.primY = any( is.na(T1_BSIdep), is.na(T1_BSIanx), is.na(T1_TRIM) ),
+            anyNA.T2.primY = any( is.na(T2_BSIdep), is.na(T2_BSIanx), is.na(T2_TRIM) ),
+            anyNA.T3.primY = any( is.na(T3_BSIdep), is.na(T3_BSIanx), is.na(T3_TRIM) ) )
+  # sanity check on this
+  if ( run.sanity == TRUE ) {
+    mine = is.na(.dat$T1_BSIdep) | is.na(.dat$T1_BSIanx) | is.na(.dat$T1_TRIM)
+    expect_equal( .dat$anyNA.T1.primY, mine )
+  }
+  
+  
+  # median-split T1_TrFS for sensitivity analysis
+  CC.median = median( d$T1_TrFS, na.rm = TRUE )  # will be fairly close to 0 because standardized
+  .dat$T1_high_TrFS = .dat$T1_TrFS > CC.median
+  
+  return(.dat)
+}
+
+
 # ANALYSIS HELPERS  -----------------------------------------------------------
 
 

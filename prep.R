@@ -3,7 +3,6 @@
 
 # To do:
 # - Exclude sites with <70% retention at wave 2
-# - *Dichotomize baseline trait forgiveness
 
 # Questions for Man Yee:
 # https://github.com/mayamathur/reach_rct/issues
@@ -25,23 +24,34 @@ source("preliminaries.R")
 scramble.treat = TRUE
 
 # overwrite old results?
-overwrite.res = FALSE
+overwrite.res = TRUE
 
 # should we overwrite previous prepped versions of the data?
 overwrite.prepped.data = TRUE
 
 # should sanity checks be run?
-run.sanity = FALSE
+run.sanity = TRUE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = FALSE
+impute.from.scratch = TRUE
 # number of imputations
 #@increase later
 M = 3
 
 # read in raw data
 setwd(raw.data.dir)
-d = read_csv("RCT Compiled dataset.csv") 
+d = read_csv("07.02.21_across sites RCT data.csv") 
+
+# fix irregular variable names
+# currently coded with a number separating "BSI" from "dep", which will confuse later recoding
+namesToFix = stringsWith( pattern = "_dep", names(d) )
+inds = whichStrings( pattern = "_dep", names(d) )
+names(d)[inds] = str_replace(string = namesToFix, pattern = "BSI", replacement = "BSIdep_")
+
+namesToFix = stringsWith( pattern = "_anx", names(d) )
+inds = whichStrings( pattern = "_anx", names(d) )
+names(d)[inds] = str_replace(string = namesToFix, pattern = "BSI", replacement = "BSIanx_")
+
 
 
 # SIMPLE SANITY CHECKS -----------------------------------------------------------
@@ -63,12 +73,6 @@ if ( run.sanity == TRUE ) {
   
   # look at missingness on T2 vars for each site
   View( t %>% select( c(site, contains("T2") ) ) )
-  
-  
-  # sanity check
-  # **South Africa is only 54% complete for T2
-  mean( !is.na(d$T2_TRIM1[ d$site == 2 ]) )      
-  
 }
 
 
@@ -305,7 +309,6 @@ if ( impute.from.scratch == TRUE ) {
   #  from mice docs: "Each row corresponds to a variable block, i.e., a set of variables to be imputed. A value of 1 means that the column variable is used as a predictor for the target block (in the rows)"
   myPred = ini$pred
   
-  # from EV:
   myPred[myPred == 1] = 0
   # impute all F/U variables using the sensible ones from baseline as well as all the other F/U vars
   myPred[ names(d) %in% varsToImpute, # vars to be imputed
@@ -366,6 +369,7 @@ if ( impute.from.scratch == TRUE ) {
 }
 
 
+
 # POST-IMPUTATION DATA WRANGLING -----------------------------------------------------------
 
 
@@ -374,43 +378,6 @@ d = read_interm("prepped_data_intermediate1.csv")
 
 
 
-
-wrangle_post_imputation = function(.dat) {
-  
-  # ~ Make long dataset ------------------------------------
-  # close, but this has rows for each outcome
-  # see "anscombe" example here
-  
-  #@will need to edit col names in here after Man Yee separates BSI, etc.
-  
-  # l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
-  #                         names_to = c(".value", "set"),
-  #                         names_sep = "_" )
-  
-  
-  # ~ Make new variables ------------------------------------
-  
-  # vars that weren't useful to carry through imputation process
-  
-  # indicators for having any missingness on a primary outcome at each time
-  message("You'll need to edit var names here after Man Yee recodes")
-   .dat = .dat %>% rowwise() %>%
-      mutate( anyNA.T1.primY = any( is.na(T1_BSI), is.na(T1_TRIM) ),
-              anyNA.T2.primY = any( is.na(T2_BSI), is.na(T2_TRIM) ),
-              anyNA.T3.primY = any( is.na(T3_BSI), is.na(T3_TRIM) ) )
-  # sanity check on this
-   if ( run.sanity == TRUE ) {
-     mine = is.na(.dat$T1_BSI) | is.na(.dat$T1_TRIM)
-     expect_equal( .dat$anyNA.T1.primY, mine )
-   }
-   
-   
-   # median-split T1_TrFS for sensitivity analysis
-   CC.median = median( d$T1_TrFS, na.rm = TRUE )  # will be fairly close to 0 because standardized
-  .dat$T1_high_TrFS = .dat$T1_TrFS > CC.median
-   
-  return(.dat)
-}
 
 d = wrangle_post_imputation(.dat = d)
 

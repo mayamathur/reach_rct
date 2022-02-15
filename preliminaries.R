@@ -60,7 +60,7 @@ source("helper.R")
 # BSI-depression
 # BSI-anxiety
 # TRIM
-primYNames = c("BSI", "TRIM")
+primYNames = c("BSIdep", "BSIanx", "TRIM")
 # names with times, as in wide-format data
 primYNamesWide = c( paste( "T1_", primYNames, sep=""),
                     paste( "T2_", primYNames, sep=""),
@@ -69,9 +69,9 @@ primYNamesWide = c( paste( "T1_", primYNames, sep=""),
 # secondary outcomes (4)
 #@not sure which is flourishing index vs. forbearance scale
 # Trait Forgiveness (TrFS)
-# Forbearance Scale (?)
+# Forbearance Scale (@NOT IN DATASET)
 # Decision to Forgive Scale (DTFS)
-# Flourishing Index (?)
+# Flourishing Index (FSFS per codebook in xlsx file)
 secYNames = c("TrFS", "FSFS", "DTFS" )
 # names with times, as in wide-format data
 secYNamesWide = c( paste( "T1_", secYNames, sep=""),
