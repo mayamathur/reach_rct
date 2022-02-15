@@ -167,7 +167,7 @@ analyze_one_outcome( missMethod = "CC",
 
 #missMethodsToRun = "CC"
 
-missMethodsToRun = c("CC", "MI")
+missMethodsToRun = c("CC")
 
 #@need to add Bonferronis
 for ( .y in primYNames ) {
