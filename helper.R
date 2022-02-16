@@ -384,7 +384,6 @@ report_gee_table = function(dat,
   gee.error.code = mod$error
   corstr.final = corstr  # will be changed below if there was a warning
   
-  #bm
   # if there was a warning, try a different corstr
   if ( gee.error.code != 0 ) {
     
@@ -685,11 +684,11 @@ stat_CI = function(est, lo, hi){
 
 # for all coefs in regression, organize estimates and robust inference
 #  into dataframe
-my_ols_hc0_all = function(dat, ols, yName){
+my_ols_hc_all = function(dat, ols, yName, hc.type = "HC0"){
   
   coefNames = as.list( names( ols$coefficients) )
   temp = lapply( coefNames, function(.coefName) {
-    my_ols_hc0(coefName = .coefName, dat = dat, ols = ols, yName = yName)
+    my_ols_hc(coefName = .coefName, dat = dat, ols = ols, yName = yName, hc.type = hc.type)
   } )
   
   # yields dataset
@@ -700,7 +699,7 @@ my_ols_hc0_all = function(dat, ols, yName){
 # dat: dataset (needed to calculate Hedges' g)
 # ols: the OLS model with all the effect modifiers
 # yName: outcome
-my_ols_hc0 = function( coefName, dat, ols, yName ){
+my_ols_hc = function( coefName, dat, ols, yName, hc.type = "HC0" ){
   
   dat$Y = dat[[yName]]
   
@@ -708,7 +707,7 @@ my_ols_hc0 = function( coefName, dat, ols, yName ){
   ( bhat.ols = coef(ols)[coefName] )
   
   # heteroskedasticity-consistent robust SEs:
-  (se.hc0 = sqrt( vcovHC( ols, type="HC0")[coefName, coefName] ) )
+  (se.hc0 = sqrt( vcovHC( ols, type=hc.type)[coefName, coefName] ) )
   
   tcrit = qt(.975, df = ols$df.residual)
   t = as.numeric( abs(bhat.ols / se.hc0) )

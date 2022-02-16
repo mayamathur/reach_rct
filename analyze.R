@@ -159,20 +159,30 @@ d %>% group_by(treat, site) %>%
   summarise( meanNA(T2_TRIM) )
 
 
+
+# ~~ Model 1: OLS ---------
 ols = lm( T2_TRIM ~ treat + site, data = d )
 summary(ols)  # model-based SEs (might be wrong)
 # example: SE for South Africa  = 0.04 (similar for other sites)
 # for treat: 0.03
 
+# ~~ Model 2: OLS-HC0 ---------
 # now with HC0 SEs
-res = my_ols_hc0_all( dat = d, ols = ols, yName = "treat" )
-# SE for South Africa nearly the same
+res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC0" )
+# **SE for South Africa nearly the same
 # for treat: 0.04
 
-# in main GEE model:
-# SE for South Africa: 8 e-4!!!
-# SE for treat: 0.04
 
+# ~~ Model 2b: OLS-HC1
+
+# this is better in finite samples
+# https://economics.mit.edu/files/7422
+
+res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC1" )
+# SE for South Africa nearly the same
+# for treat: 0.03
+
+# ~~ Model 3a: LMM with fixed effects ---------
 # also try LMM
 library(lme4)
 
@@ -180,10 +190,53 @@ lmm = lmer( T2_TRIM ~ treat + site + (1|site),
             data = d )
 
 summary(lmm)
-# SE for South Africa: 0.27!!! (much bigger than either OLS or GEE)
+# SE for South Africa FIXED effect: 0.27!!! (much bigger than either OLS or GEE)
 # SE for treat: 0.03
 # issue with LMM: non-normal outcomes
 
+# LMM without FEs of site; inference from empirical Bayes
+re = ranef(lmm, condVar = TRUE)
+ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
+ses = as.numeric(ses)
+ses[4]  # South Africa
+
+# **Empirical Bayes SE for South Africa: 0.03
+
+
+# ~~ Model 3b: LMM without effects ---------
+# also try LMM
+library(lme4)
+
+lmm = lmer( T2_TRIM ~ treat + (1|site),
+            data = d )
+
+summary(lmm)
+# **SE for South Africa FIXED effect: 0.27!!! (much bigger than either OLS or GEE)
+# **SE for treat: 0.03
+# issue with LMM: non-normal outcomes
+
+# LMM without FEs of site; inference from empirical Bayes
+re = ranef(lmm, condVar = TRUE)
+ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
+ses = as.numeric(ses)
+ses[4]  # South Africa
+
+#**Empirical Bayes SE for South Africa: 0.03
+
+# ~~ Model 4: GEE (prespecified) ---------
+
+mod4 = gee( T2_TRIM ~ treat + site,
+            id = as.factor(site),  
+            corstr = "independence",
+            data = d %>% filter( !is.na(T2_TRIM) ) )
+
+summ = summary(mod4)
+summ$coefficients
+
+# **Naive SE (South Africa, treat): (0.04, 0.07)
+# **Robust SE: (8 x 10^{-4}, 0.03)
+
+# ~~ Conclusions ---------
 
 #bm: choice of model doesn't seem to affect treat estimate or SE, 
 #  but very much affects SEs for sites by orders of magnitude
@@ -198,6 +251,10 @@ summary(lmm)
 # Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
 # 
 # The point of the GEE model here is to flexibly account for correlated observations between and possibly also within sites.
+# Also, nonnormal outcomes
+
+
+# the ones that are really different are GEE robust and LMM fixed effects themselves
 
 
 # SET 2 GEE MODELS -----------------------------------------------------------
