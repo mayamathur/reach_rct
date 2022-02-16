@@ -19,6 +19,7 @@ library(geesmv)
 library(gee)
 library(ggplot2)
 library(gridExtra)
+library(sandwich)
 
 
 # WORKING DIRECTORIES  -----------------------------------------------------------

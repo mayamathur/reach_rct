@@ -676,3 +676,76 @@ stat_CI = function(est, lo, hi){
   paste( est, " [", lo, ", ", hi, "]", sep = "" )
 }
 # stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
+
+
+
+
+
+# just for sanity checks
+
+# for all coefs in regression, organize estimates and robust inference
+#  into dataframe
+my_ols_hc0_all = function(dat, ols, yName){
+  
+  coefNames = as.list( names( ols$coefficients) )
+  temp = lapply( coefNames, function(.coefName) {
+    my_ols_hc0(coefName = .coefName, dat = dat, ols = ols, yName = yName)
+  } )
+  
+  # yields dataset
+  do.call( what = rbind, temp )
+}
+
+# coefName: which coefficient to report
+# dat: dataset (needed to calculate Hedges' g)
+# ols: the OLS model with all the effect modifiers
+# yName: outcome
+my_ols_hc0 = function( coefName, dat, ols, yName ){
+  
+  dat$Y = dat[[yName]]
+  
+  ( se.ols = sqrt( vcov(ols)[coefName, coefName] ) )
+  ( bhat.ols = coef(ols)[coefName] )
+  
+  # heteroskedasticity-consistent robust SEs:
+  (se.hc0 = sqrt( vcovHC( ols, type="HC0")[coefName, coefName] ) )
+  
+  tcrit = qt(.975, df = ols$df.residual)
+  t = as.numeric( abs(bhat.ols / se.hc0) )
+  
+  # standardized mean difference
+  # **note for paper: standardizing by SD(Y|X) rather than SD(Y|X,Z) where
+  #  Z is the effect modifiers because former is more directly comparable
+  #  to the effect sizes in main analysis
+  # note also that we need to calculate sd.pooled for each MI dataset rather than 
+  #  just transforming the final pooled estimate to an SMD, because SD(Y|X) differs 
+  #  in each imputed dataset
+  tab = suppressMessages( dat %>% group_by(treat) %>%
+                            summarise( m = mean(Y, na.rm = TRUE),
+                                       sd = sd(Y, na.rm = TRUE),
+                                       n = n() ) )
+  num = (tab$n[1] - 1) * tab$sd[1]^2 + (tab$n[2] - 1) * tab$sd[2]^2
+  denom = (tab$n[1] - 1) + (tab$n[2] - 1)
+  sd.pooled = sqrt(num/denom)
+  # adjustment factor for Hedges' g
+  # https://www.statisticshowto.com/hedges-g/#:~:text=Hedges'%20g%20is%20a%20measure,of%20up%20to%20about%204%25.
+  N = sum(tab$n)
+  J = ( (N-3) / (N-2.25) ) * sqrt( (N-2) / N )
+  # factor to multiply with the raw mean difference to get Hedges' g
+  term = J / sd.pooled
+  
+  return( data.frame(
+    est = bhat.ols,
+    se = se.hc0,
+    lo = bhat.ols - tcrit * se.hc0,
+    hi = bhat.ols + tcrit * se.hc0,
+    pval =  2 * ( 1 - pt(t, df = ols$df.residual ) ),
+    
+    # standardized mean difference (Hedges' g)
+    g = bhat.ols * term,
+    g.se = se.hc0 * term,
+    g.lo = (bhat.ols - tcrit * se.hc0) * term,
+    g.hi = (bhat.ols + tcrit * se.hc0) * term ) )
+}
+
+

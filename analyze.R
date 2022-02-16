@@ -110,7 +110,7 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
 
-#missMethodsToRun = "CC"
+missMethodsToRun = "CC"
 
 missMethodsToRun = c("CC", "MI")
 
@@ -135,7 +135,10 @@ for ( .y in primYNames ) {
                          formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site"),
                          analysisLabel = "set1",
-                         corstr = "exchangeable",
+                         #@SETTING "INDEPENDENCE" HERE TO AVOID FITTING 2 MODELS, 
+                         # BUT EVENTUALLY SHOULD USE "EXCH" TO SHOW THAT THEY NEVER FIT; 
+                         # I.E., REPORT_GEE_TABLE WILL AUTOMATICALLY SWITCH TO IND
+                         corstr = "independence",
                          .results.dir = .results.dir )
     
     
@@ -144,6 +147,43 @@ for ( .y in primYNames ) {
 
 
 
+
+# ~ Sanity checks ------------------------------
+
+# why are site coefficients so precise?
+# note that Columbia is reference in coeffs above
+d %>% group_by(site) %>%
+  summarise( meanNA(T2_TRIM) )
+
+d %>% group_by(treat, site) %>%
+  summarise( meanNA(T2_TRIM) )
+
+
+ols = lm( T2_TRIM ~ treat + site, data = d )
+summary(ols)
+
+res = my_ols_hc0_all( dat = d, ols = ols, yName = "treat" )
+
+
+ols = lm( T2_TRIM ~ site, data = d )
+summary(ols)
+
+
+ggplot( data = d,
+        aes( x = site, 
+             y = T2_TRIM,
+             color = as.factor(treat) ) ) +
+  
+  geom_violin(draw_quantiles = TRUE,
+              alpha = 0.4,
+              position="dodge" ) + 
+  
+  # bars: CI limits
+  stat_summary(fun.data = mean_cl_normal,
+               #fun.args = list(mult = 1),
+               #aes( color = as.factor(treat) ),
+               geom = "pointrange", 
+               position = position_dodge(width = 0.9) )
 
 # SET 2 GEE MODELS -----------------------------------------------------------
 
@@ -169,12 +209,13 @@ for ( .y in primYNames ) {
                          formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
-                         corstr = "exchangeable",
+                         corstr = "independence",
                          .results.dir = .results.dir )
     
     
   }
 }
+
 
 
 
@@ -204,7 +245,7 @@ for ( .y in c(primYNames, secYNames) ) {
                          formulaString = .formulaString,
                          analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSI", "T1_TRIM"),
                          analysisLabel = "set3",
-                         corstr = "exchangeable",
+                         corstr = "independence",
                          .results.dir = .results.dir )
     
     
@@ -284,6 +325,7 @@ analyze_one_outcome( missMethod = "CC",
 
 # in CC dataset
 
+dp = d
 
 if ( run.sanity == TRUE ) {
   
@@ -294,13 +336,14 @@ if ( run.sanity == TRUE ) {
       .y = allYNames[i]
       
       yName = paste( "T2_", .y, sep = "" )
+      dp$Y = d[[yName]]
       
       treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
       treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
 
-      p = ggplot( data = d,
+      p <<- ggplot( data = dp,
               aes( x = site, 
-                   y = get(yName),
+                   y = Y,
                    fill = as.factor(treat),
                    color = as.factor(treat) ) ) +
         
@@ -337,7 +380,8 @@ if ( run.sanity == TRUE ) {
     } # end loop over.y
   
   
-  
+  # plotList[[2]]
+  # plotList[[3]]
 
   setwd(results.aux.dir)
   ggsave("plot_violins_by_site.pdf",
