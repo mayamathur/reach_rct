@@ -342,12 +342,9 @@ if ( run.sanity == TRUE ) {
   setwd(results.aux.dir)
   ggsave("plot_violins_by_site.pdf",
          do.call("arrangeGrob", plotList),
-         width = 15,
+         width = 20,
          height = 15)
-  
-  
-  
-  
+
 }
 
 

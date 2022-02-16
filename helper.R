@@ -440,8 +440,8 @@ report_gee_table = function(dat,
     se = summ$coefficients[,"Robust S.E."]
     lo = coef(mod) - qnorm(.975) * se
     hi = coef(mod) + qnorm(.975) * se
-    Z = summ$coefficients[,"Robust z"]
-    pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
+    Z = as.numeric( summ$coefficients[,"Robust z"] )
+    pval = 2 * ( c(1) - pnorm(abs(Z)) )
   }
   
   res = data.frame( analysis = analysisLabel,
