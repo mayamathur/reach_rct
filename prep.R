@@ -286,22 +286,19 @@ if ( impute.from.scratch == TRUE ) {
   ini$method
   
   # set variables to be imputed, and those to use as predictors
-  varsToImpute = names(d)[ !names(d) %in% c("ID",
-                                            "uid",
-                                            "site",
-                                            "treat",
-                                            unusedYnamesWide,
-                                            demoVarsAux
-                                            ) ]
+  # ***Key to avoiding having missing data in the imputations (despite no loggedEvents):
+  #  You cannot use aux variables which *themselves* have missingness unless you *also* impute those variables
+  varsToImpute = c( demoVarsToAnalyze,
+                    #demoVarsAux, #can't include these!
+                    primYNamesWide,
+                    secYNamesWide )
   
-  #@TEMP: REMOVED SITE AND DEMOVARSAUX BECAUSE THEY CAUSED LOGGEDEVENTS AND MISSING DATA
-  impModelPredictors = c(primYNamesWide,
-                         secYNamesWide,
-                         demoVarsToAnalyze,
-                         unusedYnamesWide
-                         #demoVarsAux
-                         )
-  impModelPredictors = impModelPredictors[ !impModelPredictors %in% c("site", "gender")]
+  # save in case you want to adjust
+  # ( impModelPredictors = c( demoVarsToAnalyze,
+  #                           primYNamesWide,
+  #                           secYNamesWide ) )
+  
+  impModelPredictors = varsToImpute
   
   # make own predictor matrix by modifying mice's own predictor matrix to keep structure the same
   #  from mice docs: "Each row corresponds to a variable block, i.e., a set of variables to be imputed. A value of 1 means that the column variable is used as a predictor for the target block (in the rows)"
