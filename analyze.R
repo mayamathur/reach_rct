@@ -9,8 +9,6 @@
 # - Fn similar to my_ols_hc0_all, but arg is the entire model formula
 # - Then should be able to modify analyze_all_outcomes to handle MI, etc.
 
-# - Remember you currently have a scrambled Tx indicator in prep.R
-
 # For read-me:
 
 
@@ -29,9 +27,8 @@ overwrite.res = FALSE
 # should sanity checks be run?
 run.sanity = FALSE
 
-# use scrambled treatment variable?
-scramble.treat = TRUE
-if ( scramble.treat == TRUE ) d$treat = rbinom( n = nrow(d), size = 1, prob = 0.5 )
+# use scrambled treatment variable for blinding?
+scramble.treat = FALSE
 
 
 # Read in data  --------------------------------
@@ -49,8 +46,20 @@ imps <<- lapply( to.read,
 
 
 names(imps[[1]])
-meanNA(imps[[1]]$T2_TRIM)
-meanNA(imps[[2]]$T2_TRIM)
+mean( is.na(imps[[1]]$T2_TRIM) )
+
+# Scramble treatment variable for blinding, if needed  --------------------------------
+
+if ( scramble.treat == TRUE ) {
+  
+  d$treat = sample(d$treat, replace = TRUE)
+  
+  for (i in 1:M) {
+    imps[[i]]$treat = sample(imps[[i]]$treat, replace = TRUE)
+  
+}
+
+
 
 
 
@@ -95,76 +104,6 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
 #@there's a lot of missing data on ethnicity
 
-# DEBUG GEE -----------------------------------------------------------
-
-
-#CreateTableOne( data = d %>% select( c(treat, demoVars, ) ) )
-
-setwd(prepped.data.dir)
-d = read_csv("prepped_data.csv") 
-expect_equal( nrow(d), 4571 )  # from 2022-2-1
-
-
-
-### Outcome BSI
-# independent working structure: gee WORKS; Mancl FAILS
-res = analyze_one_outcome( missMethod = "CC",
-                     yName = "BSIdep",
-                     formulaString = "T2_BSIdep ~ treat + site",
-                     analysisVarNames = c("T2_BSIdep", "treat", "site"),
-                     analysisLabel = "set1",
-                     
-                     corstr = "independence",
-                     
-                     .results.dir = NA )
-res$res.raw
-
-# exch working structure: gee WARNS; Mancl WORKS
-# "Working correlation estimate not positive definite"
-res = analyze_one_outcome( missMethod = "CC",
-                     yName = "BSI",
-                     formulaString = "T2_BSI ~ treat + site",
-                     analysisVarNames = c("T2_BSI", "treat", "site"),
-                     analysisLabel = "set1",
-                     
-                     corstr = "exchangeable",
-                     
-                     .results.dir = NA )
-
-res$res.raw
-
-# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
-# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
-
-
-
-### Outcome TRIM
-# independent working structure: gee WORKS; Mancl FAILS
-analyze_one_outcome( missMethod = "CC",
-                     yName = "TRIM",
-                     formulaString = "T2_TRIM ~ treat + site",
-                     analysisVarNames = c("T2_TRIM", "treat", "site"),
-                     analysisLabel = "set1",
-                     
-                     corstr = "independence",
-                     
-                     .results.dir = NA )
-
-# exch working structure: gee WARNS; Mancl FAILS
-# "  Working correlation estimate not positive definite"
-analyze_one_outcome( missMethod = "CC",
-                     yName = "TRIM",
-                     formulaString = "T2_TRIM ~ treat + site",
-                     analysisVarNames = c("T2_TRIM", "treat", "site"),
-                     analysisLabel = "set1",
-                     
-                     corstr = "exchangeable",
-                     
-                     .results.dir = NA )
-
-# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
-# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
-
 
 # SET 1 GEE MODELS -----------------------------------------------------------
 
@@ -173,7 +112,7 @@ analyze_one_outcome( missMethod = "CC",
 
 #missMethodsToRun = "CC"
 
-missMethodsToRun = c("CC")
+missMethodsToRun = c("CC", "MI")
 
 #@need to add Bonferronis
 for ( .y in primYNames ) {
@@ -273,6 +212,68 @@ for ( .y in c(primYNames, secYNames) ) {
 }
 
 
+# DEBUG GEE -----------------------------------------------------------
+
+
+### Outcome BSI
+# independent working structure: gee WORKS; Mancl FAILS
+res = analyze_one_outcome( missMethod = "CC",
+                           yName = "BSIdep",
+                           formulaString = "T2_BSIdep ~ treat + site",
+                           analysisVarNames = c("T2_BSIdep", "treat", "site"),
+                           analysisLabel = "set1",
+                           
+                           corstr = "independence",
+                           
+                           .results.dir = NA )
+res$res.raw
+
+# exch working structure: gee WARNS; Mancl WORKS
+# "Working correlation estimate not positive definite"
+res = analyze_one_outcome( missMethod = "CC",
+                           yName = "BSI",
+                           formulaString = "T2_BSI ~ treat + site",
+                           analysisVarNames = c("T2_BSI", "treat", "site"),
+                           analysisLabel = "set1",
+                           
+                           corstr = "exchangeable",
+                           
+                           .results.dir = NA )
+
+res$res.raw
+
+# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
+# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
+
+
+
+### Outcome TRIM
+# independent working structure: gee WORKS; Mancl FAILS
+analyze_one_outcome( missMethod = "CC",
+                     yName = "TRIM",
+                     formulaString = "T2_TRIM ~ treat + site",
+                     analysisVarNames = c("T2_TRIM", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "independence",
+                     
+                     .results.dir = NA )
+
+# exch working structure: gee WARNS; Mancl FAILS
+# "  Working correlation estimate not positive definite"
+analyze_one_outcome( missMethod = "CC",
+                     yName = "TRIM",
+                     formulaString = "T2_TRIM ~ treat + site",
+                     analysisVarNames = c("T2_TRIM", "treat", "site"),
+                     analysisLabel = "set1",
+                     
+                     corstr = "exchangeable",
+                     
+                     .results.dir = NA )
+
+# with corstr = "independence", the GEE fits but the Mancl part says "computationally singular"
+# with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
+
 
 
 
@@ -286,23 +287,64 @@ for ( .y in c(primYNames, secYNames) ) {
 
 if ( run.sanity == TRUE ) {
   
+  plotList = list()
   
-    
-    for ( .y in primYNames[1] ) {
-    #for ( .y in c(primYNames, secYNames) ) {
+    for ( i in 1:length(allYNames) ) {
+      
+      .y = allYNames[i]
       
       yName = paste( "T2_", .y, sep = "" )
+      
+      treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
+      treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
 
-      ggplot( data = d,
+      p = ggplot( data = d,
               aes( x = site, 
                    y = get(yName),
+                   fill = as.factor(treat),
                    color = as.factor(treat) ) ) +
-        geom_violin() + 
-        scale_color_manual( values = c("orange", "black" ) ) +
-        theme_bw()
+        
+        # overall CC means
+        geom_hline( yintercept = treat0.mean,
+                    lty = 2,
+                    color = "black" ) + 
+        
+        geom_hline( yintercept = treat1.mean,
+                    lty = 2,
+                    color = "orange" ) + 
+        
+        geom_violin(draw_quantiles = TRUE,
+                    alpha = 0.4,
+                    position="dodge" ) + 
+        
+        # bars: CI limits
+        stat_summary(fun.data = mean_cl_normal,
+                     #fun.args = list(mult = 1),
+                     #aes( color = as.factor(treat) ),
+                     geom = "pointrange", 
+                     position = position_dodge(width = 0.9) ) +
+      
+        scale_fill_manual( values = c("black", "orange" ) ) +
+        scale_color_manual( values = c("black", "orange" ) ) +
+        
+        ylab(yName) +
+        
+        theme_classic()
+      
+      plotList[[i]] = p
       
       
-    }
+    } # end loop over.y
+  
+  
+  
+
+  setwd(results.aux.dir)
+  ggsave("plot_violins_by_site.pdf",
+         do.call("arrangeGrob", plotList),
+         width = 15,
+         height = 15)
+  
   
   
   

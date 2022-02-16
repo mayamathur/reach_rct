@@ -18,6 +18,8 @@ library(geepack)
 library(geesmv)
 library(gee)
 library(ggplot2)
+library(gridExtra)
+
 
 # WORKING DIRECTORIES  -----------------------------------------------------------
 
@@ -77,6 +79,8 @@ secYNames = c("TrFS", "FSFS", "DTFS" )
 secYNamesWide = c( paste( "T1_", secYNames, sep=""),
                    paste( "T2_", secYNames, sep=""),
                    paste( "T3_", secYNames, sep="") )
+
+allYNames = c(primYNames, secYNames)
 
 # not used in analysis, but included in imputation model
 unusedYnames = c("EFS", "PGI", "TSHS")
