@@ -17,7 +17,7 @@ library(tidyverse)
 library(geepack)
 library(geesmv)
 library(gee)
-
+library(ggplot2)
 
 # WORKING DIRECTORIES  -----------------------------------------------------------
 

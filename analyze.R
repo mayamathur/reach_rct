@@ -29,6 +29,11 @@ overwrite.res = FALSE
 # should sanity checks be run?
 run.sanity = FALSE
 
+# use scrambled treatment variable?
+scramble.treat = TRUE
+if ( scramble.treat == TRUE ) d$treat = rbinom( n = nrow(d), size = 1, prob = 0.5 )
+
+
 # Read in data  --------------------------------
 setwd(prepped.data.dir)
 d = read_csv("prepped_data.csv") 
@@ -75,6 +80,7 @@ if ( run.sanity == TRUE ) {
   
   
 }
+
 
 
 # TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
@@ -265,6 +271,47 @@ for ( .y in c(primYNames, secYNames) ) {
     
   }
 }
+
+
+
+
+
+# ADDITIONAL SANITY CHECKS -----------------------------------------------------------
+
+
+# ~ Boxplots of outcomes by site and treatment group --------------------------------------
+
+# in CC dataset
+
+
+if ( run.sanity == TRUE ) {
+  
+  
+    
+    for ( .y in primYNames[1] ) {
+    #for ( .y in c(primYNames, secYNames) ) {
+      
+      yName = paste( "T2_", .y, sep = "" )
+
+      ggplot( data = d,
+              aes( x = site, 
+                   y = get(yName),
+                   color = as.factor(treat) ) ) +
+        geom_violin() + 
+        scale_color_manual( values = c("orange", "black" ) ) +
+        theme_bw()
+      
+      
+    }
+  
+  
+  
+}
+
+
+
+
+
 
 
 

@@ -20,8 +20,6 @@ source("preliminaries.R")
 
 ##### Set Parameters Here #####
 
-# use scrambled treatment variable?
-scramble.treat = TRUE
 
 # overwrite old results?
 overwrite.res = TRUE
@@ -30,7 +28,7 @@ overwrite.res = TRUE
 overwrite.prepped.data = TRUE
 
 # should sanity checks be run?
-run.sanity = TRUE
+run.sanity = FALSE
 
 # should we impute from scratch or read in saved datasets?
 impute.from.scratch = TRUE
@@ -96,8 +94,6 @@ table(d$site)
 d$treat = recode(d$Group,
                  `1` = 1,
                  `2` = 0)
-
-if ( scramble.treat == TRUE ) d$treat = rbinom( n = nrow(d), size = 1, prob = 0.5 )
 
 
 #@ subject 171 has gender=0, but that's not in codebook
@@ -270,7 +266,8 @@ setwd(results.dir)
 setwd("Auxiliary")
 fwrite(t, "perc_nonmissing_by_var.csv")
 
-missmap(d)
+# a bit slow
+#missmap(d)
 
 
 
@@ -294,7 +291,8 @@ if ( impute.from.scratch == TRUE ) {
                                             "site",
                                             "treat",
                                             unusedYnamesWide,
-                                            demoVarsAux) ]
+                                            demoVarsAux
+                                            ) ]
   
   #@TEMP: REMOVED SITE AND DEMOVARSAUX BECAUSE THEY CAUSED LOGGEDEVENTS AND MISSING DATA
   impModelPredictors = c(primYNamesWide,
@@ -329,7 +327,7 @@ if ( impute.from.scratch == TRUE ) {
                method = myMethod,
                seed = 451)
   
-  imps$loggedEvents
+  imps$loggedEvents 
   imps$loggedEvents$dep
   
   # make sure there is no missing data in the imputations
