@@ -36,17 +36,30 @@ setwd(prepped.data.dir)
 d = read_csv("prepped_data.csv") 
 expect_equal( nrow(d), 4571 )  # from 2022-2-1
 
+# long dataset
+l = read_csv("prepped_data_long.csv") 
+expect_equal( nrow(l), 4571 * 3 )  # because 3 times/subject
+
 
 # Read in imputations  --------------------------------
 # read in the imputations as a list rather than a mids object so that we can pool manually
 setwd(imputed.data.dir)
-to.read = list.files()[ grepl( pattern = "prepped", x = list.files() ) ]
+to.read = list.files()[ grepl( pattern = "dataset_prepped", x = list.files() ) ]
 imps <<- lapply( to.read,
                  function(x) suppressMessages(read_csv(x)) )
 
 
 names(imps[[1]])
 mean( is.na(imps[[1]]$T2_TRIM) )
+
+# read in long-format imputations for sensitivity analysis
+setwd(imputed.data.dir)
+to.read = list.files()[ grepl( pattern = "dataset_long_prepped", x = list.files() ) ]
+impsl <<- lapply( to.read,
+                 function(x) suppressMessages(read_csv(x)) )
+
+names(impsl[[1]])
+
 
 # Scramble treatment variable for blinding, if needed  --------------------------------
 
@@ -329,10 +342,9 @@ for ( .y in c(primYNames, secYNames) ) {
 
 # PLOTS: EFFECT MAINTENANCE OVER TIME -----------------------------------------------------------
 
-# one for each primary outcome only
-
-# want time as a VARIABLE, so long format
-#bm 
+# one for each primary outcome
+# points: means
+# bars: +/- 1 SE (calculated by HC1, but very similar to naive; see code below)
 
 plotList = list()
 
@@ -383,10 +395,11 @@ for ( i in 1:length(primYNames) ) {
 # plotList[[3]]
 
 setwd(results.dir)
+setwd("Figures")
 ggsave("plot_effect_maintenance.pdf",
        do.call("arrangeGrob", plotList),
-       width = 10,
-       height = 8)
+       width = 6,
+       height = 10)
 
 
 # sanity check

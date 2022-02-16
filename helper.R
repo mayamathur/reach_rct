@@ -164,6 +164,18 @@ wrangle_post_imputation = function(.dat) {
   return(.dat)
 }
 
+make_long_dataset = function(.dat) {
+  # for effect-maintenance plots and secondary analysis
+  # see "anscombe" example here: https://tidyr.tidyverse.org/reference/pivot_longer.html
+  
+  l = .dat %>% pivot_longer( cols = T1_BSIdep : T3_TSHS,
+                             names_to = c("wave", ".value"),
+                             names_sep = "_" )
+  
+  l
+  
+}
+
 
 # ANALYSIS HELPERS  -----------------------------------------------------------
 

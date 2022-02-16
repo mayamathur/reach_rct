@@ -2,7 +2,7 @@
 # NOTES -----------------------------------------------------------
 
 # To do:
-# - Exclude sites with <70% retention at wave 2
+# - Make pretty treatment variable, etc., for plots
 
 # Questions for Man Yee:
 # https://github.com/mayamathur/reach_rct/issues
@@ -358,8 +358,14 @@ if ( impute.from.scratch == TRUE ) {
       setwd(imputed.data.dir)
       write_csv( impDat,
                  paste("imputed_dataset_prepped", i, ".csv", sep="") )
-    }
-  }
+      
+      # make long datasets
+      impl = make_long_dataset(.dat = impDat)
+      write_csv( impl,
+                 paste("imputed_dataset_long_prepped", i, ".csv", sep="") )
+      
+    }  # end "for (i in 1:M)"
+  }  # end "if ( overwrite.res == TRUE )"
   
 }
 
@@ -373,36 +379,14 @@ d = read_interm("prepped_data_intermediate1.csv")
 
 
 d = wrangle_post_imputation(.dat = d)
-
-
-# WIDE -> LONG   -----------------------------------------------------------
-
-# only used for secondary analysis and effect-maintenance plot
-
-# need to put this in wrangle_ fn b/c need to do this for each imputation
-
-# want "T[X]" to become time variable and 
-
-
-# ~ Make long dataset ------------------------------------
-
-# see "anscombe" example here: https://tidyr.tidyverse.org/reference/pivot_longer.html
-
-l = d %>% pivot_longer( cols = T1_BSIdep : T3_TSHS,
-                        names_to = c("wave", ".value"),
-                        names_sep = "_" )
-
-View(head(l))
-
-
-
+l = make_long_dataset(.dat = d)
 
 
 # SAVE FINAL DATASET -----------------------------------------------------------
 
 setwd(prepped.data.dir)
 fwrite(d, "prepped_data.csv")
-
+fwrite(l, "prepped_data_long.csv")
 
 
 
