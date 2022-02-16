@@ -372,9 +372,29 @@ if ( impute.from.scratch == TRUE ) {
 d = read_interm("prepped_data_intermediate1.csv")
 
 
-
-
 d = wrangle_post_imputation(.dat = d)
+
+
+# WIDE -> LONG   -----------------------------------------------------------
+
+# only used for secondary analysis and effect-maintenance plot
+
+# need to put this in wrangle_ fn b/c need to do this for each imputation
+
+# want "T[X]" to become time variable and 
+
+
+# ~ Make long dataset ------------------------------------
+
+# see "anscombe" example here: https://tidyr.tidyverse.org/reference/pivot_longer.html
+
+l = d %>% pivot_longer( cols = T1_BSIdep : T3_TSHS,
+                        names_to = c("wave", ".value"),
+                        names_sep = "_" )
+
+View(head(l))
+
+
 
 
 

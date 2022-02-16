@@ -140,17 +140,6 @@ recode_psych_scale = function(.d,
 
 wrangle_post_imputation = function(.dat) {
   
-  # ~ Make long dataset ------------------------------------
-  # close, but this has rows for each outcome
-  # see "anscombe" example here
-  
-  #@will need to edit col names in here after Man Yee separates BSI, etc.
-  
-  # l = d %>% pivot_longer( cols = T1_BSI:T3_TSHS,
-  #                         names_to = c(".value", "set"),
-  #                         names_sep = "_" )
-  
-  
   # ~ Make new variables ------------------------------------
   
   # vars that weren't useful to carry through imputation process

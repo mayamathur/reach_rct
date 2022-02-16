@@ -325,6 +325,77 @@ for ( .y in c(primYNames, secYNames) ) {
 }
 
 
+
+# PLOTS: EFFECT MAINTENANCE OVER TIME -----------------------------------------------------------
+
+# one for each primary outcome only
+
+# want time as a VARIABLE, so long format
+#bm 
+
+plotList = list()
+
+for ( i in 1:length(primYNames) ) {
+  
+  .y = primYNames[i]
+  lp = l %>% filter(Y == .y)
+  
+  dp$Y = d[[yName]]
+  
+  treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
+  treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
+  
+  p <<- ggplot( data = dp,
+                aes( x = site, 
+                     y = Y,
+                     fill = as.factor(treat),
+                     color = as.factor(treat) ) ) +
+    
+    # overall CC means
+    geom_hline( yintercept = treat0.mean,
+                lty = 2,
+                color = "black" ) + 
+    
+    geom_hline( yintercept = treat1.mean,
+                lty = 2,
+                color = "orange" ) + 
+    
+    geom_violin(draw_quantiles = TRUE,
+                alpha = 0.4,
+                position="dodge" ) + 
+    
+    # bars: CI limits
+    stat_summary(fun.data = mean_cl_normal,
+                 #fun.args = list(mult = 1),
+                 #aes( color = as.factor(treat) ),
+                 geom = "pointrange", 
+                 position = position_dodge(width = 0.9) ) +
+    
+    scale_fill_manual( values = c("black", "orange" ) ) +
+    scale_color_manual( values = c("black", "orange" ) ) +
+    
+    ylab(yName) +
+    
+    theme_classic()
+  
+  plotList[[i]] = p
+  
+  
+} # end loop over.y
+
+
+# plotList[[2]]
+# plotList[[3]]
+
+setwd(results.aux.dir)
+ggsave("plot_violins_by_site.pdf",
+       do.call("arrangeGrob", plotList),
+       width = 20,
+       height = 15)
+
+
+
+
 # DEBUG GEE -----------------------------------------------------------
 
 
