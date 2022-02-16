@@ -737,3 +737,14 @@ my_ols_hc = function( coefName, dat, ols, yName, hc.type = "HC0" ){
 }
 
 
+# marginal HC1 SE
+# for plotting
+marginal_hc_se = function(vec, hc.type = "HC1") {
+  dat = data.frame(Y = vec)
+  ols = lm(vec ~ 1, data = dat)
+  se.hc = sqrt( vcovHC( ols, type=hc.type)["(Intercept)", "(Intercept)"] ) 
+  return(se.hc)
+}
+
+
+

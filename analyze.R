@@ -173,14 +173,15 @@ res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC0" )
 # for treat: 0.04
 
 
-# ~~ Model 2b: OLS-HC1
-
+# ~~ Model 2b: OLS-HC1 ---------
 # this is better in finite samples
 # https://economics.mit.edu/files/7422
 
 res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC1" )
 # SE for South Africa nearly the same
 # for treat: 0.03
+
+
 
 # ~~ Model 3a: LMM with fixed effects ---------
 # also try LMM
@@ -338,43 +339,37 @@ plotList = list()
 for ( i in 1:length(primYNames) ) {
   
   .y = primYNames[i]
-  lp = l %>% filter(Y == .y)
+  lp = l
+  lp$Y = l[[.y]]
   
-  dp$Y = d[[yName]]
+  #@later, check with TVW about type of SE to show here
+  agg = lp %>% group_by(treat, wave) %>%
+    summarise( Mean = meanNA(Y),
+               SE = marginal_hc_se(Y),
+               # sanity check:
+               SE.plain = sd(Y, na.rm = TRUE) / sqrt( length(Y[!is.na(Y)] ) ) )
   
-  treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
-  treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
+  # sanity check: should be very similar
+  #abs( agg$SE - agg$SE.plain )
   
-  p <<- ggplot( data = dp,
-                aes( x = site, 
-                     y = Y,
-                     fill = as.factor(treat),
+  p <<- ggplot( data = agg,
+                aes( x = wave, 
+                     y = Mean,
                      color = as.factor(treat) ) ) +
-    
-    # overall CC means
-    geom_hline( yintercept = treat0.mean,
+  
+    geom_hline( yintercept = 0,
                 lty = 2,
-                color = "black" ) + 
+                color = "gray") +
     
-    geom_hline( yintercept = treat1.mean,
-                lty = 2,
-                color = "orange" ) + 
+    geom_point(size = 1.2) + 
+    geom_line( aes(group = as.factor(treat)) ) +
+    geom_errorbar( aes(ymin = Mean - SE,
+                       ymax = Mean + SE),
+                   width = 0 ) +
     
-    geom_violin(draw_quantiles = TRUE,
-                alpha = 0.4,
-                position="dodge" ) + 
-    
-    # bars: CI limits
-    stat_summary(fun.data = mean_cl_normal,
-                 #fun.args = list(mult = 1),
-                 #aes( color = as.factor(treat) ),
-                 geom = "pointrange", 
-                 position = position_dodge(width = 0.9) ) +
-    
-    scale_fill_manual( values = c("black", "orange" ) ) +
     scale_color_manual( values = c("black", "orange" ) ) +
     
-    ylab(yName) +
+    ylab(.y) +
     
     theme_classic()
   
@@ -387,13 +382,17 @@ for ( i in 1:length(primYNames) ) {
 # plotList[[2]]
 # plotList[[3]]
 
-setwd(results.aux.dir)
-ggsave("plot_violins_by_site.pdf",
+setwd(results.dir)
+ggsave("plot_effect_maintenance.pdf",
        do.call("arrangeGrob", plotList),
-       width = 20,
-       height = 15)
+       width = 10,
+       height = 8)
 
 
+# sanity check
+meanNA(d$T1_TRIM[ d$treat == 1] )
+meanNA(d$T2_TRIM[ d$treat == 1] )
+meanNA(d$T3_TRIM[ d$treat == 1] )
 
 
 # DEBUG GEE -----------------------------------------------------------
