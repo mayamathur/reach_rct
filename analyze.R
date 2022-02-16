@@ -160,30 +160,45 @@ d %>% group_by(treat, site) %>%
 
 
 ols = lm( T2_TRIM ~ treat + site, data = d )
-summary(ols)
+summary(ols)  # model-based SEs (might be wrong)
+# example: SE for South Africa  = 0.04 (similar for other sites)
+# for treat: 0.03
 
+# now with HC0 SEs
 res = my_ols_hc0_all( dat = d, ols = ols, yName = "treat" )
+# SE for South Africa nearly the same
+# for treat: 0.04
+
+# in main GEE model:
+# SE for South Africa: 8 e-4!!!
+# SE for treat: 0.04
+
+# also try LMM
+library(lme4)
+
+lmm = lmer( T2_TRIM ~ treat + site + (1|site),
+            data = d )
+
+summary(lmm)
+# SE for South Africa: 0.27!!! (much bigger than either OLS or GEE)
+# SE for treat: 0.03
+# issue with LMM: non-normal outcomes
 
 
-ols = lm( T2_TRIM ~ site, data = d )
-summary(ols)
+#bm: choice of model doesn't seem to affect treat estimate or SE, 
+#  but very much affects SEs for sites by orders of magnitude
+# I think we need the FEs by site because of stratified randomization
 
+# on having both fixed and REs for same variable:
+# https://stats.stackexchange.com/questions/263194/does-it-make-sense-to-include-a-factor-as-both-fixed-and-random-factor-in-a-line
 
-ggplot( data = d,
-        aes( x = site, 
-             y = T2_TRIM,
-             color = as.factor(treat) ) ) +
-  
-  geom_violin(draw_quantiles = TRUE,
-              alpha = 0.4,
-              position="dodge" ) + 
-  
-  # bars: CI limits
-  stat_summary(fun.data = mean_cl_normal,
-               #fun.args = list(mult = 1),
-               #aes( color = as.factor(treat) ),
-               geom = "pointrange", 
-               position = position_dodge(width = 0.9) )
+#bm: Next think about whether we need GEE in the first place. Look for my HK slide deck?
+
+# rationale in slide deck:
+# Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
+# 
+# The point of the GEE model here is to flexibly account for correlated observations between and possibly also within sites.
+
 
 # SET 2 GEE MODELS -----------------------------------------------------------
 
