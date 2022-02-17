@@ -122,19 +122,27 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 #@there's a lot of missing data on ethnicity
 
 
-# SET 1 GEE MODELS (PRIMARY OUTCOMES) -----------------------------------------------------------
+# SET 1 GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
+
+# **For these analyses, Bonferroni significance is only shown for secondaries,
+#  and in paper, it should only be reported for coefficient "treat" (not sites)
 
 missMethodsToRun = "CC"
 
 #missMethodsToRun = c("CC", "MI")
 
-for ( .y in primYNames ) {
+for ( .y in c(primYNames, secYNames) ) {
+  
+  if ( .y %in% primYNames ) bonferroni.alpha = NA
+  if ( .y %in% secYNames ) bonferroni.alpha = 0.005
+  
   
   .fullYName = paste("T2_", .y, sep = "")
   .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
+  
   
   
   for ( .missMethod in missMethodsToRun ) {
@@ -152,9 +160,7 @@ for ( .y in primYNames ) {
                          idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site"),
                          analysisLabel = "set1",
-                         #@SETTING "INDEPENDENCE" HERE TO AVOID FITTING 2 MODELS, 
-                         # BUT EVENTUALLY SHOULD USE "EXCH" TO SHOW THAT THEY NEVER FIT; 
-                         # I.E., REPORT_GEE_TABLE WILL AUTOMATICALLY SWITCH TO IND
+                         bonferroni.alpha = bonferroni.alpha,
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
     
@@ -409,9 +415,13 @@ for ( .missMethod in missMethodsToRun ) {
   
 }  # end loop over missMethod
 
+#@add global test of new model with all sites vs. main one
 
 
-# SET 3 GEE MODELS (SENSITIVITY ANALYSIS) -----------------------------------------------------------
+
+
+
+# SET 4 GEE MODELS (SENSITIVITY ANALYSIS) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY

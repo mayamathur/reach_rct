@@ -386,8 +386,10 @@ report_gee_table = function(dat,
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
   
-  if ( !is.na(subsetString) ) dat = dat %>% filter( eval( parse(text = subsetString) ) )
-  message( paste("\n**** For analysis ", analysisLabel, ", made subset of size ", nrow(dat), sep = "" ) )
+  if ( !is.na(subsetString) ) {
+    dat = dat %>% filter( eval( parse(text = subsetString) ) )
+    message( paste("\n**** For analysis ", analysisLabel, ", made subset of size ", nrow(dat), sep = "" ) )
+  }
   
   
   # ~ Fit GEE (without Mancl correction to SEs) to get coefs  --------------------------
