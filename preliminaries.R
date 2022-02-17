@@ -21,6 +21,7 @@ library(ggplot2)
 library(gridExtra)
 library(sandwich)
 
+options(scipen = 999)
 
 # WORKING DIRECTORIES  -----------------------------------------------------------
 

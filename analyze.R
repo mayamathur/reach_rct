@@ -248,22 +248,56 @@ mod4 = gee( T2_TRIM ~ treat + site,
             corstr = "independence",
             data = d %>% filter( !is.na(T2_TRIM) ) )
 
-summ = summary(mod4)
-summ$coefficients
+summ4 = summary(mod4)
+summ4$coefficients
 
-# **Naive SE (South Africa, treat): (0.04, 0.07)
-# **Robust SE: (8 x 10^{-4}, 0.03)
+# **Naive SE (South Africa, treat): (0.04, 0.03)
+# **Robust SE: (0.0008, 0.07)
+
+
+
+# ~~ Model 4b: GEE with clustering by uid instead of site ---------
+
+mod4b = gee( T2_TRIM ~ treat + site,
+            id = as.factor(uid),  
+            corstr = "independence",
+            data = d %>% filter( !is.na(T2_TRIM) ) )
+
+summ4b = summary(mod4b)
+summ4b$coefficients
+
+# **Naive SE (South Africa, treat): (0.04, 0.03)
+# **Robust SE: (0.04, 0.03)
+
+# Now they agree almost exactly!!!
+
+# ~~ Model 4c: GEE with fake site variable ---------
+
+
+d$fake.cluster = sample( 1:6, replace = TRUE, size = nrow(d) )
+
+mod4c = gee( T2_TRIM ~ treat + site,
+             id = as.factor(fake.cluster),  
+             corstr = "independence",
+             data = d %>% filter( !is.na(T2_TRIM) ) )
+
+summ4c = summary(mod4c)
+summ4c$coefficients
+
+# **Now naive and robust still match!
+# This experiment suggests that the problem is having site as fixed effect
+#  AND as clustering variable (not having too few clusters).
+
+
 
 # ~~ Conclusions ---------
 
-#bm: choice of model doesn't seem to affect treat estimate or SE, 
-#  but very much affects SEs for sites by orders of magnitude
-# I think we need the FEs by site because of stratified randomization
+
+# The culprit is the robust SEs in GEE (not the naive ones), and only when the 
+#  working correlation structure uses id = site rather than id = uid.
 
 # on having both fixed and REs for same variable:
 # https://stats.stackexchange.com/questions/263194/does-it-make-sense-to-include-a-factor-as-both-fixed-and-random-factor-in-a-line
-
-#bm: Next think about whether we need GEE in the first place. Look for my HK slide deck?
 
 # rationale in slide deck:
 # Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
@@ -272,7 +306,6 @@ summ$coefficients
 # Also, nonnormal outcomes
 
 
-# the ones that are really different are GEE robust and LMM fixed effects themselves
 
 
 # SET 2 GEE MODELS -----------------------------------------------------------
