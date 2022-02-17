@@ -170,7 +170,18 @@ make_long_dataset = function(.dat) {
   
   l = .dat %>% pivot_longer( cols = T1_BSIdep : T3_TSHS,
                              names_to = c("wave", ".value"),
-                             names_sep = "_" )
+                             names_sep = "_" ) 
+  
+  # make long-format treatment variable
+  l$treat.vary = NA
+  l$treat.vary[ l$wave == "T1" ] = 0
+  l$treat.vary[ l$wave == "T2" & l$treat == 0 ] = 0
+  l$treat.vary[ l$wave == "T2" & l$treat == 1 ] = 1
+  l$treat.vary[ l$wave == "T3" ] = 1
+  
+  # sanity check
+  l %>% group_by(wave, treat) %>%
+    summarise( unique(treat.vary) )
   
   l
   
@@ -373,7 +384,7 @@ report_gee_table = function(dat,
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
   
-
+  
   # fit GEE (without Mancl correction to SEs) to get coefs
   mod  = gee( eval( parse(text = formulaString) ),
               id = as.factor(site),  
@@ -400,7 +411,7 @@ report_gee_table = function(dat,
     
     est = coef(mod)
     gee.error.code = mod$error
-  corstr.final = new.corstr
+    corstr.final = new.corstr
   }
   
   # get Mancl-corrected SEs
@@ -553,7 +564,7 @@ analyze_one_outcome = function(missMethod,
   }
   
   return(list(res.raw = res.raw, res.nice = res.nice))
-
+  
 }
 
 

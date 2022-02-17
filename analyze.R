@@ -56,7 +56,7 @@ mean( is.na(imps[[1]]$T2_TRIM) )
 setwd(imputed.data.dir)
 to.read = list.files()[ grepl( pattern = "dataset_long_prepped", x = list.files() ) ]
 impsl <<- lapply( to.read,
-                 function(x) suppressMessages(read_csv(x)) )
+                  function(x) suppressMessages(read_csv(x)) )
 
 names(impsl[[1]])
 
@@ -69,6 +69,10 @@ if ( scramble.treat == TRUE ) {
   
   for (i in 1:M) {
     imps[[i]]$treat = sample(imps[[i]]$treat, replace = TRUE)
+    
+    impsl[[i]]$treat = sample(impsl[[i]]$treat, replace = TRUE)
+    
+  }
   
 }
 
@@ -88,7 +92,7 @@ if ( run.sanity == TRUE ) {
   setwd(results.aux.dir)
   setwd("Marginal and site-specific Table 1's with sanity checks")
   write_csv(t1, "marginal_table1_cc_sanity.csv")
-
+  
   # ~ Site-specific Table 1's with sanity checks -----------------------------------
   
   for ( .s in unique(d$site) ) {
@@ -132,7 +136,7 @@ for ( .y in primYNames ) {
   
   .fullYName = paste("T2_", .y, sep = "")
   .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
-
+  
   
   for ( .missMethod in missMethodsToRun ) {
     
@@ -368,7 +372,7 @@ for ( i in 1:length(primYNames) ) {
                 aes( x = wave, 
                      y = Mean,
                      color = as.factor(treat) ) ) +
-  
+    
     geom_hline( yintercept = 0,
                 lty = 2,
                 color = "gray") +
@@ -407,6 +411,34 @@ meanNA(d$T1_TRIM[ d$treat == 1] )
 meanNA(d$T2_TRIM[ d$treat == 1] )
 meanNA(d$T3_TRIM[ d$treat == 1] )
 
+
+
+# SENSITIVITY ANALYSES -----------------------------------------------------------
+
+# ~ 2 x 3 ANOVA --------------------------------
+
+
+
+
+
+# ~ GEE with all time points --------------------------------
+
+#bm: in prep, need to make treatment indicator that's VARYING over time
+
+report_gee_table(dat = l,
+                 formulaString = "TRIM ~ ",
+                 analysisVarNames,  # for excluding missing data
+                 analysisLabel,  # will become an identifer column in dataset
+                 corstr = "exchangeable",
+                 se.type = "model",  # "model" or "mancl"
+                 
+                 write.dir = NA )
+
+
+
+# ~ GEE controlling for precision covariates --------------------------------
+
+# already done in Analysis Set 3 :)
 
 # DEBUG GEE -----------------------------------------------------------
 
@@ -486,64 +518,64 @@ if ( run.sanity == TRUE ) {
   
   plotList = list()
   
-    for ( i in 1:length(allYNames) ) {
+  for ( i in 1:length(allYNames) ) {
+    
+    .y = allYNames[i]
+    
+    yName = paste( "T2_", .y, sep = "" )
+    dp$Y = d[[yName]]
+    
+    treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
+    treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
+    
+    p <<- ggplot( data = dp,
+                  aes( x = site, 
+                       y = Y,
+                       fill = as.factor(treat),
+                       color = as.factor(treat) ) ) +
       
-      .y = allYNames[i]
+      # overall CC means
+      geom_hline( yintercept = treat0.mean,
+                  lty = 2,
+                  color = "black" ) + 
       
-      yName = paste( "T2_", .y, sep = "" )
-      dp$Y = d[[yName]]
+      geom_hline( yintercept = treat1.mean,
+                  lty = 2,
+                  color = "orange" ) + 
       
-      treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
-      treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
-
-      p <<- ggplot( data = dp,
-              aes( x = site, 
-                   y = Y,
-                   fill = as.factor(treat),
-                   color = as.factor(treat) ) ) +
-        
-        # overall CC means
-        geom_hline( yintercept = treat0.mean,
-                    lty = 2,
-                    color = "black" ) + 
-        
-        geom_hline( yintercept = treat1.mean,
-                    lty = 2,
-                    color = "orange" ) + 
-        
-        geom_violin(draw_quantiles = TRUE,
-                    alpha = 0.4,
-                    position="dodge" ) + 
-        
-        # bars: CI limits
-        stat_summary(fun.data = mean_cl_normal,
-                     #fun.args = list(mult = 1),
-                     #aes( color = as.factor(treat) ),
-                     geom = "pointrange", 
-                     position = position_dodge(width = 0.9) ) +
+      geom_violin(draw_quantiles = TRUE,
+                  alpha = 0.4,
+                  position="dodge" ) + 
       
-        scale_fill_manual( values = c("black", "orange" ) ) +
-        scale_color_manual( values = c("black", "orange" ) ) +
-        
-        ylab(yName) +
-        
-        theme_classic()
+      # bars: CI limits
+      stat_summary(fun.data = mean_cl_normal,
+                   #fun.args = list(mult = 1),
+                   #aes( color = as.factor(treat) ),
+                   geom = "pointrange", 
+                   position = position_dodge(width = 0.9) ) +
       
-      plotList[[i]] = p
+      scale_fill_manual( values = c("black", "orange" ) ) +
+      scale_color_manual( values = c("black", "orange" ) ) +
       
+      ylab(yName) +
       
-    } # end loop over.y
+      theme_classic()
+    
+    plotList[[i]] = p
+    
+    
+  } # end loop over.y
   
   
   # plotList[[2]]
   # plotList[[3]]
-
+  
   setwd(results.aux.dir)
   ggsave("plot_violins_by_site.pdf",
          do.call("arrangeGrob", plotList),
          width = 20,
          height = 15)
-
+  
 }
 
 
