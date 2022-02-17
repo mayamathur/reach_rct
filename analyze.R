@@ -426,9 +426,11 @@ meanNA(d$T3_TRIM[ d$treat == 1] )
 #bm: in prep, need to make treatment indicator that's VARYING over time
 
 report_gee_table(dat = l,
-                 formulaString = "TRIM ~ ",
-                 analysisVarNames,  # for excluding missing data
-                 analysisLabel,  # will become an identifer column in dataset
+                 formulaString = "TRIM ~ treat.vary + site",
+                 #@confirm with Tyler that he's happy with this
+                 id.string = "as.factor(uid)",
+                 analysisVarNames = c("TRIM", "treat.vary", "site"),  # for excluding missing data
+                 analysisLabel = "sens_gee_long",  # will become an identifer column in dataset
                  corstr = "exchangeable",
                  se.type = "model",  # "model" or "mancl"
                  

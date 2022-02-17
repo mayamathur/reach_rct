@@ -371,6 +371,7 @@ make_table_one = function(.d,
 # fit GEE with a given model formula and organize results nicely
 report_gee_table = function(dat,
                             formulaString,
+                            idString = "as.factor(site)",  # default is for main analysis, but change change to participant ID for long GEE sensitivity analysis
                             analysisVarNames,  # for excluding missing data
                             analysisLabel,  # will become an identifer column in dataset
                             corstr = "exchangeable",
@@ -387,7 +388,7 @@ report_gee_table = function(dat,
   
   # fit GEE (without Mancl correction to SEs) to get coefs
   mod  = gee( eval( parse(text = formulaString) ),
-              id = as.factor(site),  
+              id = eval( parse(text = idString) ),  
               corstr = corstr,
               data = dat )
   
@@ -405,7 +406,7 @@ report_gee_table = function(dat,
     new.corstr = corstrs[ corstrs != corstr ]
     
     mod  = gee( eval( parse(text = formulaString) ),
-                id = as.factor(site),  
+                id = eval( parse(text = idString) ),  
                 corstr = new.corstr,
                 data = dat )
     
@@ -419,7 +420,9 @@ report_gee_table = function(dat,
   #  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
   #  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
   if ( se.type == "mancl" ) {
-    dat$id = as.factor(dat$site)
+    if ( formulaString == "as.factor(site)" ) dat$id = as.factor(dat$site)
+    if ( formulaString == "as.factor(uid)" )  dat$id = as.factor(dat$uid)
+    
     # this fn ONLY returns the variance estimate, not the coeffs
     
     # this is prone to being computationally singular
