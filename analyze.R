@@ -129,7 +129,7 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
 missMethodsToRun = "CC"
 
-missMethodsToRun = c("CC", "MI")
+#missMethodsToRun = c("CC", "MI")
 
 #@need to add Bonferronis
 for ( .y in primYNames ) {
@@ -150,12 +150,13 @@ for ( .y in primYNames ) {
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
+                         idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site"),
                          analysisLabel = "set1",
                          #@SETTING "INDEPENDENCE" HERE TO AVOID FITTING 2 MODELS, 
                          # BUT EVENTUALLY SHOULD USE "EXCH" TO SHOW THAT THEY NEVER FIT; 
                          # I.E., REPORT_GEE_TABLE WILL AUTOMATICALLY SWITCH TO IND
-                         corstr = "independence",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     
@@ -332,9 +333,10 @@ for ( .y in primYNames ) {
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
+                         idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
-                         corstr = "independence",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     
@@ -368,9 +370,10 @@ for ( .y in c(primYNames, secYNames) ) {
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
+                         idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSI", "T1_TRIM"),
                          analysisLabel = "set3",
-                         corstr = "independence",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     
@@ -598,6 +601,7 @@ analyze_one_outcome( missMethod = "CC",
 
 
 #**but using idString = "as.factor(uid)" means that the GEE itself never warns!
+
 
 # ADDITIONAL SANITY CHECKS -----------------------------------------------------------
 
