@@ -100,4 +100,7 @@ demoVarsAux = c("eth", "educ", "income", "isReligious", "religion", "marstat")
 
 
 
+### Other Global Vars ###
 
+# rounding digits
+digits = 2

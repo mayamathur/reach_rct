@@ -316,7 +316,7 @@ summ4c$coefficients
 
 
 
-# SET 2 GEE MODELS (EFFECT MODIFICATION BY T1_TrFS) -----------------------------------------------------------
+# SET 2 GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
 
 
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
@@ -431,7 +431,7 @@ for ( .missMethod in missMethodsToRun ) {
 for ( .y in c(primYNames, secYNames) ) {
   
   .fullYName = paste("T2_", .y, sep = "")
-  .formulaString = paste("T2_", .y, " ~ treat + site + age + gender + T1_BSI + T1_TRIM", sep = "" )
+  .formulaString = paste("T2_", .y, " ~ treat + site + age + gender + T1_BSIdep + T1_BSIanx + T1_TRIM", sep = "" )
   
   
   for ( .missMethod in missMethodsToRun ) {
@@ -439,14 +439,14 @@ for ( .y in c(primYNames, secYNames) ) {
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
-    .results.dir = paste( results.dir, "/Analysis set 3/", missingString, sep = "" )
+    .results.dir = paste( results.dir, "/Analysis set 4/", missingString, sep = "" )
     
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
-                         analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSI", "T1_TRIM"),
-                         analysisLabel = "set3",
+                         analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSIdep", "T1_BSIanx", "T1_TRIM"),
+                         analysisLabel = "set4",
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
     
@@ -454,6 +454,9 @@ for ( .y in c(primYNames, secYNames) ) {
   }
 }
 
+
+# @Gives warnings that SEs differed by more than 0.01
+# That seems to be because gender has evil tiny category called "RECODE TROUBLE"; return to this after dataset is fixed
 
 
 # PLOTS: EFFECT MAINTENANCE OVER TIME -----------------------------------------------------------
