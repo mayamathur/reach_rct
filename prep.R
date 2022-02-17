@@ -31,7 +31,7 @@ overwrite.prepped.data = TRUE
 run.sanity = FALSE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = TRUE
+impute.from.scratch = FALSE
 # number of imputations
 #@increase later
 M = 3
@@ -366,6 +366,11 @@ if ( impute.from.scratch == TRUE ) {
       
     }  # end "for (i in 1:M)"
   }  # end "if ( overwrite.res == TRUE )"
+  
+}  # end "if (impute.from.scratch == TRUE)"
+
+
+if ( impute.from.scratch == FALSE ) {
   
 }
 

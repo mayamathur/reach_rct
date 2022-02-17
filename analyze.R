@@ -122,7 +122,7 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 #@there's a lot of missing data on ethnicity
 
 
-# SET 1 GEE MODELS -----------------------------------------------------------
+# SET 1 GEE MODELS (PRIMARY OUTCOMES) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
@@ -131,7 +131,6 @@ missMethodsToRun = "CC"
 
 #missMethodsToRun = c("CC", "MI")
 
-#@need to add Bonferronis
 for ( .y in primYNames ) {
   
   .fullYName = paste("T2_", .y, sep = "")
@@ -311,7 +310,7 @@ summ4c$coefficients
 
 
 
-# SET 2 GEE MODELS -----------------------------------------------------------
+# SET 2 GEE MODELS (EFFECT MODIFIERS) -----------------------------------------------------------
 
 
 # GEE of primary Y's ~ treat*T1_TFS(binary) + site

@@ -387,10 +387,10 @@ report_gee_table = function(dat,
   
   
   # ~ Fit GEE (without Mancl correction to SEs) to get coefs  --------------------------
-  mod  = gee( eval( parse(text = formulaString) ),
-              id = eval( parse(text = idString) ),  
-              corstr = corstr,
-              data = dat )
+  mod  = suppressMessages( gee( eval( parse(text = formulaString) ),
+                                id = eval( parse(text = idString) ),  
+                                corstr = corstr,
+                                data = dat ) )
   
   est = coef(mod)
   # "error" doesn't actually trigger an error, but is basically a warning
@@ -405,10 +405,10 @@ report_gee_table = function(dat,
     # switch to whichever we haven't tried yet
     new.corstr = corstrs[ corstrs != corstr ]
     
-    mod  = gee( eval( parse(text = formulaString) ),
-                id = eval( parse(text = idString) ),  
-                corstr = new.corstr,
-                data = dat )
+    mod  = suppressMessges( gee( eval( parse(text = formulaString) ),
+                                 id = eval( parse(text = idString) ),  
+                                 corstr = new.corstr,
+                                 data = dat ) )
     
     est = coef(mod)
     gee.error.code = mod$error
@@ -428,7 +428,7 @@ report_gee_table = function(dat,
       stop("idString not recognized in part of code that does Mancl SEs")
     }
     
-  
+    
     # this is prone to being computationally singular
     tryCatch({
       message("Trying Mancl SEs")
@@ -466,11 +466,22 @@ report_gee_table = function(dat,
     pval = 2 * ( c(1) - pnorm(abs(Z)) )
   }
   
+  # ~ Sanity check --------------------------
+  
+  # compare naive model-based SEs to the main ones (which are either Mancl or robust)
+  se.naive = summ$coefficients[,"Naive S.E."]
+  diff = abs( as.numeric(se) - as.numeric(se.naive) )
+  
+  if ( max(diff) > 0.01 ) {
+    warning( paste("\n***Some SEs differed by more than 0.01 from robust ones. Biggest abs difference was ", round(max(diff), digits ) ) )
+    #browser()
+  }
+  
   # ~ Organize results --------------------------
   res = data.frame( analysis = analysisLabel,
                     variable = names(est),
                     est = est, 
-                    se = se,
+                    se = se,  # robust one
                     lo = lo,
                     hi = hi,
                     pval = pval,
@@ -499,11 +510,12 @@ analyze_one_outcome = function( dat.cc = d,
                                 yName,
                                 formulaString,
                                 
-                                #NEW
                                 idString = "as.factor(site)",
                                 se.type = "model",  # "model" or "mancl"
                                 
                                 corstr = "exchangeable",
+                                
+                                bonferroni.alpha = NA,
                                 
                                 analysisVarNames, # for handling missing data in report_gee_table
                                 analysisLabel,
@@ -557,22 +569,25 @@ analyze_one_outcome = function( dat.cc = d,
   # might have only 1 row if we're doing CC analysis
   res.raw = mi_pool_all(mi.res)
   
-  
   # ~ Prettify and Write Results Tables ------------------------------
   res.raw = res.raw %>% add_column(.before = 1,
                                    analysis = analysisLabel,
-                                   formulaString = formulaString)
+                                   var.name = row.names(res.raw) ) %>%
+    add_column(  formula.string = formulaString,
+                 id.string = idString, 
+                 se.type = se.type )
   
-  # this part breaks for CC because doesn't have pvalBonf
   digits = 2
   res.nice = data.frame( analysis = res.raw$analysis,
-                         varName = row.names(res.raw),
+                         var.name = row.names(res.raw),
                          est = stat_CI( round(res.raw$est, digits),
                                         round(res.raw$lo, digits),
                                         round(res.raw$hi, digits) ),
                          
+                         se = round(res.raw$se, digits),
+                         
                          pval = format.pval(res.raw$pval, eps  = 0.0001),
-                         pvalBonf = format.pval(res.raw$pvalBonf, eps = 0.0001) )
+                         bonferroni.signif = res.raw$pval < bonferroni.alpha )
   
   
   if (!is.na(.results.dir)) {
@@ -675,12 +690,6 @@ mi_pool_all = function(.mi.res){
                    pvals = unlist( lapply( .mi.res, function(j) j$pval[i] ) ) )
     
     raw
-    
-    # SMD = mi_pool( ests = unlist( lapply( .mi.res, function(j) j$g[i] ) ),
-    #                ses = unlist( lapply( .mi.res, function(j) j$g.se[i] ) ) )
-    # names(SMD) = paste( "g.", names(SMD), sep = "" )
-    
-    #cbind(raw, SMD)
   } )
   
   # yields dataset
@@ -688,12 +697,12 @@ mi_pool_all = function(.mi.res){
   row.names(.res) = row.names(.mi.res[[1]])
   
   
-  # add Bonferroni p-values, counting only the effect modifiers 
-  #  using the fact that their names have colons
-  modNames = row.names(.res)[ grepl( pattern = ":", x = row.names(.res) ) ]
-  nMods = length(modNames)
-  .res$pvalBonf = NA
-  .res$pvalBonf[ row.names(.res) %in% modNames ] = pmin( 1, .res$pval[ row.names(.res) %in% modNames ] * nMods )
+  # # add Bonferroni p-values, counting only the effect modifiers 
+  # #  using the fact that their names have colons
+  # modNames = row.names(.res)[ grepl( pattern = ":", x = row.names(.res) ) ]
+  # nMods = length(modNames)
+  # .res$pvalBonf = NA
+  # .res$pvalBonf[ row.names(.res) %in% modNames ] = pmin( 1, .res$pval[ row.names(.res) %in% modNames ] * nMods )
   
   # only makes sense if there's only one "imputation" (e.g., CC analysis)
   geeErrorCodes = unlist( lapply( .mi.res, function(j) j$geeErrorCode[1] ) )
