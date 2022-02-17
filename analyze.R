@@ -259,9 +259,9 @@ summ4$coefficients
 # ~~ Model 4b: GEE with clustering by uid instead of site ---------
 
 mod4b = gee( T2_TRIM ~ treat + site,
-            id = as.factor(uid),  
-            corstr = "independence",
-            data = d %>% filter( !is.na(T2_TRIM) ) )
+             id = as.factor(uid),  
+             corstr = "independence",
+             data = d %>% filter( !is.na(T2_TRIM) ) )
 
 summ4b = summary(mod4b)
 summ4b$coefficients
@@ -310,12 +310,15 @@ summ4c$coefficients
 
 
 
-# SET 2 GEE MODELS (EFFECT MODIFIERS) -----------------------------------------------------------
+# SET 2 GEE MODELS (EFFECT MODIFICATION BY T1_TrFS) -----------------------------------------------------------
 
 
-# GEE of primary Y's ~ treat*T1_TFS(binary) + site
+# GEE of primary Y's ~ treat*T1_TrFS(binary) + site
 
 #missMethodsToRun = "CC"
+
+#@NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
+#  but not site, so should not report the site p-values in this model
 
 for ( .y in primYNames ) {
   
@@ -333,9 +336,11 @@ for ( .y in primYNames ) {
                          yName = .y,
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
+                         
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
                          analysisLabel = "set2",
                          corstr = "exchangeable",
+                         bonferroni.alpha = 0.005,
                          .results.dir = .results.dir )
     
     
@@ -345,8 +350,68 @@ for ( .y in primYNames ) {
 
 
 
+# SET 3 GEE MODELS (ANALYZE WITHIN SITE) -----------------------------------------------------------
 
-# SET 3 GEE MODELS -----------------------------------------------------------
+# Per prereg, we're NOT reporting p-values for individual sites
+# Instead we're doing a single global test
+
+
+for ( .missMethod in missMethodsToRun ) {
+  
+  if (.missMethod == "MI") missingString = "Multiple imputation"
+  if (.missMethod == "CC") missingString = "Complete-case"
+  
+  .results.dir = paste( results.dir, "/Analysis set 3/", missingString, sep = "" )
+  
+  
+  for ( .y in primYNames ) {
+    
+    .fullYName = paste("T2_", .y, sep = "")
+    .formulaString = paste("T2_", .y, " ~ treat", sep = "" )
+    
+    
+    
+    for (.site in unique(d$site) ) {
+      
+      # * if you want to save site-by-site results automatically as well, just change .results.dir
+      #  arg below
+      site.res = analyze_one_outcome( 
+        missMethod = .missMethod,
+        yName = .y,
+        formulaString = .formulaString,
+        idString = "as.factor(uid)",
+        subsetString = paste( "site == '", .site, "'", sep="" ),
+        
+        analysisVarNames = c(.fullYName, "treat"),
+        analysisLabel = paste("set3", .y, .site, sep="_"),
+        corstr = "exchangeable",
+        .results.dir = NA )
+      
+      # keep only the important part and omit p-value per prereg
+      site.row = site.res$res.nice %>% filter(var.name == "treat") %>% select(analysis, var.name, est)
+      
+      site.row = site.row %>% add_column(.before = "est",
+                                         stratified.model = .site )
+      
+      if ( .site == unique(d$site)[1] ) res = site.row else res = rbind(res, site.row)
+      
+    } # end loop over sites
+    
+    
+    
+    setwd(.results.dir)
+    
+    string = paste( "set3", .y, missingString, "gee_table_pretty", ".csv", sep="_" )
+    write_csv(res, string)
+    
+    
+  }  # end loop over .y
+  
+}  # end loop over missMethod
+
+
+
+# SET 3 GEE MODELS (SENSITIVITY ANALYSIS) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY

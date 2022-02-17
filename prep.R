@@ -370,7 +370,14 @@ if ( impute.from.scratch == TRUE ) {
 }  # end "if (impute.from.scratch == TRUE)"
 
 
+
+# read in existing imputations
 if ( impute.from.scratch == FALSE ) {
+  
+  setwd(imputed.data.dir)
+  to.read = list.files()[ grepl( pattern = "dataset_prepped", x = list.files() ) ]
+  imps <<- lapply( to.read,
+                   function(x) suppressMessages(read_csv(x)) )
   
 }
 

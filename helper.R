@@ -372,6 +372,7 @@ make_table_one = function(.d,
 report_gee_table = function(dat,
                             formulaString,
                             idString = "as.factor(site)",  # default is for main analysis, but change change to participant ID for long GEE sensitivity analysis
+                            subsetString = NA,  # should we subset the data?
                             analysisVarNames,  # for excluding missing data
                             analysisLabel,  # will become an identifer column in dataset
                             corstr = "exchangeable",
@@ -384,6 +385,9 @@ report_gee_table = function(dat,
   # df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
+  
+  if ( !is.na(subsetString) ) dat = dat %>% filter( eval( parse(text = subsetString) ) )
+  message( paste("\n**** For analysis ", analysisLabel, ", made subset of size ", nrow(dat), sep = "" ) )
   
   
   # ~ Fit GEE (without Mancl correction to SEs) to get coefs  --------------------------
@@ -509,6 +513,7 @@ analyze_one_outcome = function( dat.cc = d,
                                 missMethod,
                                 yName,
                                 formulaString,
+                                subsetString = NA,
                                 
                                 idString = "as.factor(site)",
                                 se.type = "model",  # "model" or "mancl"
@@ -541,6 +546,7 @@ analyze_one_outcome = function( dat.cc = d,
     mi.res = lapply( dats.imp, function(.d) report_gee_table(dat = .d,
                                                              formulaString = formulaString,
                                                              idString = idString,
+                                                             subsetString = subsetString,
                                                              se.type = se.type,
                                                              analysisVarNames = analysisVarNames,
                                                              analysisLabel = analysisLabel,
@@ -553,6 +559,7 @@ analyze_one_outcome = function( dat.cc = d,
     mi.res = list( report_gee_table(dat = dat.cc,
                                     formulaString = formulaString,
                                     idString = idString,
+                                    subsetString = subsetString,
                                     se.type = se.type,
                                     analysisVarNames = analysisVarNames,
                                     analysisLabel = analysisLabel,
