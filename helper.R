@@ -378,15 +378,15 @@ report_gee_table = function(dat,
                             se.type = "model",  # "model" or "mancl"
                             
                             write.dir = NA){
-
-  # exclude missing data
+  
+  # ~ Exclude missing data to please gee() --------------------------
   # demonstration of how this fn works:
   # df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
   # df %>% drop_na(x)
   dat = dat %>% drop_na(analysisVarNames)
   
   
-  # fit GEE (without Mancl correction to SEs) to get coefs
+  # ~ Fit GEE (without Mancl correction to SEs) to get coefs  --------------------------
   mod  = gee( eval( parse(text = formulaString) ),
               id = eval( parse(text = idString) ),  
               corstr = corstr,
@@ -397,7 +397,7 @@ report_gee_table = function(dat,
   gee.error.code = mod$error
   corstr.final = corstr  # will be changed below if there was a warning
   
-  # if there was a warning, try a different corstr
+  # ~ If there was a warning, try a different corstr --------------------------
   if ( gee.error.code != 0 ) {
     
     # possible correlation structures to try
@@ -415,18 +415,25 @@ report_gee_table = function(dat,
     corstr.final = new.corstr
   }
   
-  # get Mancl-corrected SEs
+  # ~ Get Mancl-corrected SEs --------------------------
   # critical: because of the silly way GEE.var.md handles the id variable (visible if you
   #  run it in debug mode, in the very first step), the id variable must ALSO be put in the dataframe
   #  like this, as a factor, to avoid the initial part of GEE.var.md that puts the id variable back in the dataframe
   if ( se.type == "mancl" ) {
-    if ( formulaString == "as.factor(site)" ) dat$id = as.factor(dat$site)
-    if ( formulaString == "as.factor(uid)" )  dat$id = as.factor(dat$uid)
+    if ( idString == "as.factor(site)" ) {
+      dat$id = as.factor(dat$site)
+    } else if ( idString == "as.factor(uid)" ){
+      dat$id = as.factor(dat$uid)
+    } else {
+      stop("idString not recognized in part of code that does Mancl SEs")
+    }
     
-    # this fn ONLY returns the variance estimate, not the coeffs
-    
+  
     # this is prone to being computationally singular
     tryCatch({
+      message("Trying Mancl SEs")
+      
+      # this fn ONLY returns the variance estimate, not the coeffs
       SEs.only = GEE.var.md( eval( parse(text = formulaString) ), 
                              data = dat,  
                              id = id,  # DON'T CHANGE TO ANOTHER VARIABLE NAME; SEE NOTE ABOVE
@@ -448,6 +455,7 @@ report_gee_table = function(dat,
     })
   }
   
+  # ~ Get model-based robust SEs --------------------------
   if ( se.type == "model" ) {
     summ = summary(mod)
     est = coef(mod)
@@ -458,6 +466,7 @@ report_gee_table = function(dat,
     pval = 2 * ( c(1) - pnorm(abs(Z)) )
   }
   
+  # ~ Organize results --------------------------
   res = data.frame( analysis = analysisLabel,
                     variable = names(est),
                     est = est, 
@@ -485,17 +494,20 @@ report_gee_table = function(dat,
 # yName: outcomes to analyze
 analyze_one_outcome = function( dat.cc = d,
                                 dats.imp = imps,
-  
-  
-  missMethod,
-                               yName,
-                               formulaString,
-                               idString = "as.factor(site)",
-                               corstr = "exchangeable",
-                               
-                               analysisVarNames, # for handling missing data in report_gee_table
-                               analysisLabel,
-                               .results.dir = NA) {
+                                
+                                missMethod,
+                                yName,
+                                formulaString,
+                                
+                                #NEW
+                                idString = "as.factor(site)",
+                                se.type = "model",  # "model" or "mancl"
+                                
+                                corstr = "exchangeable",
+                                
+                                analysisVarNames, # for handling missing data in report_gee_table
+                                analysisLabel,
+                                .results.dir = NA) {
   
   
   # #@TEST ONLY
@@ -515,12 +527,13 @@ analyze_one_outcome = function( dat.cc = d,
   # ~ Fit Model(s) with MI or CC ------------------------------
   if ( missMethod == "MI" ) {
     mi.res = lapply( dats.imp, function(.d) report_gee_table(dat = .d,
-                                                         formulaString = formulaString,
-                                                         idString = idString,
-                                                         analysisVarNames = analysisVarNames,
-                                                         analysisLabel = analysisLabel,
-                                                         corstr = corstr,
-                                                         write.dir = NA) )
+                                                             formulaString = formulaString,
+                                                             idString = idString,
+                                                             se.type = se.type,
+                                                             analysisVarNames = analysisVarNames,
+                                                             analysisLabel = analysisLabel,
+                                                             corstr = corstr,
+                                                             write.dir = NA) )
   }
   
   if ( missMethod == "CC" ) {
@@ -528,6 +541,7 @@ analyze_one_outcome = function( dat.cc = d,
     mi.res = list( report_gee_table(dat = dat.cc,
                                     formulaString = formulaString,
                                     idString = idString,
+                                    se.type = se.type,
                                     analysisVarNames = analysisVarNames,
                                     analysisLabel = analysisLabel,
                                     corstr = corstr,

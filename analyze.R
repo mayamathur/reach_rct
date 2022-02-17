@@ -290,6 +290,8 @@ summ4c$coefficients
 
 
 
+
+
 # ~~ Conclusions ---------
 
 
@@ -521,6 +523,11 @@ for ( .y in primYNames ) {
 res = analyze_one_outcome( missMethod = "CC",
                            yName = "BSIdep",
                            formulaString = "T2_BSIdep ~ treat + site",
+                           
+                           #NEW
+                           idString = "as.factor(uid)",
+                           se.type = "mancl",
+                           
                            analysisVarNames = c("T2_BSIdep", "treat", "site"),
                            analysisLabel = "set1",
                            
@@ -532,9 +539,15 @@ res$res.raw
 # exch working structure: gee WARNS; Mancl WORKS
 # "Working correlation estimate not positive definite"
 res = analyze_one_outcome( missMethod = "CC",
-                           yName = "BSI",
-                           formulaString = "T2_BSI ~ treat + site",
-                           analysisVarNames = c("T2_BSI", "treat", "site"),
+                           yName = "BSIdep",
+                           formulaString = "T2_BSIdep ~ treat + site",
+                           
+                           #NEW
+                           idString = "as.factor(uid)",
+                           se.type = "mancl",
+                           
+                           
+                           analysisVarNames = c("T2_BSIdep", "treat", "site"),
                            analysisLabel = "set1",
                            
                            corstr = "exchangeable",
@@ -558,6 +571,10 @@ analyze_one_outcome( missMethod = "CC",
                      
                      corstr = "independence",
                      
+                     #NEW
+                     idString = "as.factor(uid)",
+                     se.type = "mancl",
+                     
                      .results.dir = NA )
 
 # exch working structure: gee WARNS; Mancl FAILS
@@ -568,6 +585,10 @@ analyze_one_outcome( missMethod = "CC",
                      analysisVarNames = c("T2_TRIM", "treat", "site"),
                      analysisLabel = "set1",
                      
+                     #NEW
+                     idString = "as.factor(uid)",
+                     se.type = "mancl",
+                     
                      corstr = "exchangeable",
                      
                      .results.dir = NA )
@@ -576,7 +597,7 @@ analyze_one_outcome( missMethod = "CC",
 # with corstr = "exchangeable", the GEE warns that the working correlation estimate isn't pos def
 
 
-
+#**but using idString = "as.factor(uid)" means that the GEE itself never warns!
 
 # ADDITIONAL SANITY CHECKS -----------------------------------------------------------
 
