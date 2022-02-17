@@ -378,7 +378,7 @@ report_gee_table = function(dat,
                             se.type = "model",  # "model" or "mancl"
                             
                             write.dir = NA){
-  
+
   # exclude missing data
   # demonstration of how this fn works:
   # df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
@@ -483,10 +483,16 @@ report_gee_table = function(dat,
 # uses a lot of global vars, like study
 # missMethod: "MI" or "CC"
 # yName: outcomes to analyze
-analyze_one_outcome = function(missMethod,
+analyze_one_outcome = function( dat.cc = d,
+                                dats.imp = imps,
+  
+  
+  missMethod,
                                yName,
                                formulaString,
+                               idString = "as.factor(site)",
                                corstr = "exchangeable",
+                               
                                analysisVarNames, # for handling missing data in report_gee_table
                                analysisLabel,
                                .results.dir = NA) {
@@ -508,8 +514,9 @@ analyze_one_outcome = function(missMethod,
   
   # ~ Fit Model(s) with MI or CC ------------------------------
   if ( missMethod == "MI" ) {
-    mi.res = lapply( imps, function(.d) report_gee_table(dat = .d,
+    mi.res = lapply( dats.imp, function(.d) report_gee_table(dat = .d,
                                                          formulaString = formulaString,
+                                                         idString = idString,
                                                          analysisVarNames = analysisVarNames,
                                                          analysisLabel = analysisLabel,
                                                          corstr = corstr,
@@ -518,8 +525,9 @@ analyze_one_outcome = function(missMethod,
   
   if ( missMethod == "CC" ) {
     # format as list, exactly like MI, so that it can be passed to mi_pool_all
-    mi.res = list( report_gee_table(dat = d,
+    mi.res = list( report_gee_table(dat = dat.cc,
                                     formulaString = formulaString,
+                                    idString = idString,
                                     analysisVarNames = analysisVarNames,
                                     analysisLabel = analysisLabel,
                                     corstr = corstr,

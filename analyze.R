@@ -424,17 +424,55 @@ meanNA(d$T3_TRIM[ d$treat == 1] )
 # ~ GEE with all time points --------------------------------
 
 #bm: in prep, need to make treatment indicator that's VARYING over time
+# 
+# report_gee_table(dat = l,
+#                  formulaString = "TRIM ~ treat.vary + site",
+#                  #@confirm with Tyler that he's happy with this
+#                  id.string = "as.factor(uid)",
+#                  analysisVarNames = c("TRIM", "treat.vary", "site"),  # for excluding missing data
+#                  analysisLabel = "sens_gee_long",  # will become an identifer column in dataset
+#                  corstr = "exchangeable",
+#                  se.type = "model",  # "model" or "mancl"
+#                  
+#                  write.dir = NA )
 
-report_gee_table(dat = l,
-                 formulaString = "TRIM ~ treat.vary + site",
-                 #@confirm with Tyler that he's happy with this
-                 id.string = "as.factor(uid)",
-                 analysisVarNames = c("TRIM", "treat.vary", "site"),  # for excluding missing data
-                 analysisLabel = "sens_gee_long",  # will become an identifer column in dataset
-                 corstr = "exchangeable",
-                 se.type = "model",  # "model" or "mancl"
-                 
-                 write.dir = NA )
+
+
+#missMethodsToRun = c("CC", "MI")
+missMethodsToRun = "CC"
+
+#@ this needs more sanity checks
+for ( .y in primYNames ) {
+  
+  .formulaString = paste(.y, " ~ treat.vary + site", sep = "" )
+  
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Sensitivity analyses/Analysis set 4/", missingString, sep = "" )
+    
+    analyze_one_outcome( dat.cc = l,
+                         dats.imp = impsl,
+                         
+                         missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         analysisVarNames = c(.y, "treat.vary", "site"),
+                         analysisLabel = "set4_gee_long",
+                         corstr = "independence",
+                         .results.dir = .results.dir )
+    
+    
+  }
+}
+
+
 
 
 
