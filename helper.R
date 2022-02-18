@@ -61,6 +61,19 @@ vr = function(){
 }
 
 
+# make a string for estimate and CI
+stat_CI = function(est, lo, hi){
+  paste( est, " [", lo, ", ", hi, "]", sep = "" )
+}
+# stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
+
+
+# return percent true for 0/1 variable, counting NA as own category
+percTRUE_incl_NA = function(x) {
+  prop.table( table(x, useNA = "ifany") )[2]
+}
+
+
 # DATA PREP HELPERS  -----------------------------------------------------------
 
 
@@ -729,13 +742,6 @@ mi_pool_all = function(.mi.res){
   return(.res)
 }
 
-# make a string for estimate and CI
-stat_CI = function(est, lo, hi){
-  paste( est, " [", lo, ", ", hi, "]", sep = "" )
-}
-# stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
-
-
 
 
 
@@ -818,3 +824,54 @@ marginal_hc_se = function(vec, hc.type = "HC1") {
 
 
 
+# for reproducible manuscript-writing
+# adds a row to the file "stats_for_paper" with a new statistic or value for the manuscript
+# optionally, "section" describes the section of code producing a given result
+# expects "study" to be a global var
+update_result_csv = function( name,
+                              .section = NA,
+                              value = NA,
+                              print = FALSE ) {
+  setwd(results.dir)
+  
+  new.rows = data.frame( name,
+                         value = as.character(value),
+                         section = as.character(.section) )
+  
+  # to avoid issues with variable types when overwriting
+  new.rows$name = as.character(new.rows$name)
+  new.rows$value = as.character(new.rows$value)
+  new.rows$section = as.character(new.rows$section)
+  
+  
+  if ( "stats_for_paper.csv" %in% list.files() ) {
+    res.overleaf <<- read.csv( "stats_for_paper.csv",
+                               stringsAsFactors = FALSE,
+                               colClasses = rep("character", 3 ) )
+    
+    # if this entry is already in the results file, overwrite the
+    #  old one
+    if ( all(name %in% res.overleaf$name) ) res.overleaf[ res.overleaf$name %in% name, ] <<- new.rows
+    else res.overleaf <<- rbind(res.overleaf, new.rows)
+  }
+  
+  if ( !"stats_for_paper.csv" %in% list.files() ) {
+    res.overleaf <<- new.rows
+  }
+  
+  write.csv( res.overleaf, 
+             "stats_for_paper.csv",
+             row.names = FALSE,
+             quote = FALSE )
+  
+  # also write to Overleaf
+  setwd(overleaf.dir)
+  write.csv( res.overleaf, 
+             "stats_for_paper.csv",
+             row.names = FALSE,
+             quote = FALSE )
+  
+  if ( print == TRUE ) {
+    View(res.overleaf)
+  }
+}

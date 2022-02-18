@@ -420,12 +420,7 @@ for ( .missMethod in missMethodsToRun ) {
 
 # ~ Global test for site heterogeneity --------------------------------------
 
-
-missMethodsToRun = "CC"
-
-#missMethodsToRun = c("CC", "MI")
-
-
+# get ready to collect the 5 site heterogeneity p-values across outcomes
 pvals = c()
 
 for ( .y in primYNames ) {
@@ -433,7 +428,7 @@ for ( .y in primYNames ) {
   .fullYName = paste("T2_", .y, sep = "")
   .formulaString = paste(.fullYName, " ~ treat*site", sep = "" )
   
-  .missMethod = "CC"
+  .missMethod = "MI"
   
   # for ( .missMethod in missMethodsToRun ) {
   #   
@@ -466,10 +461,15 @@ for ( .y in primYNames ) {
 }
 
 
-pval.site.hetero = p.hmp(pvals, L = length(pvals))
+( pval.site.hetero = p.hmp(pvals, L = length(pvals) ) )
+# this is supposed to be compared to the Bonferroni threshold
 
 
+update_result_csv(name = "Site heterogeneity global pval",
+                  value = round(pval.site.hetero, 3) )
 
+update_result_csv(name = "Site heterogeneity global pval passed Bonferroni",
+                  value = pval.site.hetero < 0.005 )
 
 
 
@@ -737,7 +737,10 @@ if ( run.sanity == TRUE ) {
     
     .y = allYNames[i]
     
-    yName = paste( "T2_", .y, sep = "" )
+    
+    for ( .t in c("T2_", "T3_") ) {
+    
+    yName = paste( ".t, .y, sep = "" )
     dp$Y = d[[yName]]
     
     treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
@@ -786,10 +789,13 @@ if ( run.sanity == TRUE ) {
   # plotList[[3]]
   
   setwd(results.aux.dir)
-  ggsave("plot_violins_by_site.pdf",
+  ggsave( paste(.t, "plot_violins_by_site.pdf", sep = "" ),
          do.call("arrangeGrob", plotList),
          width = 20,
          height = 15)
+  
+  
+  } # end loop over T2, T3
   
 }
 
