@@ -416,88 +416,129 @@ for ( .missMethod in missMethodsToRun ) {
   
 }  # end loop over missMethod
 
-#@add global test of new model with all sites vs. main one
 
 
 # ~ Global test for site heterogeneity --------------------------------------
 
 
-mod.small = report_gee_table( dat = d,
-                              formulaString = "T2_TRIM ~ treat + site",
-                              analysisVarNames = c("T2_TRIM", "treat", "site"),
-                              analysisLabel = "",
-                              
-                              return.gee.model = TRUE,
-                              write.dir = NA )
+missMethodsToRun = "CC"
 
-mod.full = report_gee_table( dat = d,
-                              formulaString = "T2_TRIM ~ treat*site",
-                              analysisVarNames = c("T2_TRIM", "treat", "site"),
-                              analysisLabel = "",
-                              
-                              return.gee.model = TRUE,
-                              write.dir = NA )
-
-mod.full$res
+#missMethodsToRun = c("CC", "MI")
 
 
+pvals = c()
+
+for ( .y in primYNames ) {
+  
+  .fullYName = paste("T2_", .y, sep = "")
+  .formulaString = paste(.fullYName, " ~ treat*site", sep = "" )
+  
+  .missMethod = "CC"
+  
+  # for ( .missMethod in missMethodsToRun ) {
+  #   
+  #   cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+  #   
+  #   if (.missMethod == "MI") missingString = "Multiple imputation"
+  #   if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 6/", missingString, sep = "" )
+    
+    mod.int = analyze_one_outcome( missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         analysisVarNames = c(.fullYName, "treat", "site"),
+                         analysisLabel = "set6",
+                         corstr = "exchangeable",
+                         .results.dir = .results.dir )
+    
+    
+    # extract interaction term p-values
+    coefNames = row.names(mod.int$res.raw)
+    keepers = stringsWith( pattern = "treat:", x = coefNames )
+    
+    new.pvals = mod.int$res.raw$pval[ coefNames %in% keepers ]
+    
+    if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
+    
+  
+}
 
 
-# doesn't return anything useful
-compCoef(mod.small$mod, mod.full$mod)
-
-library(glmtoolbox)
-anova(mod.small$mod, mod.full$mod, test="score")
-
-
-# doesn't work for gee package object
-geepack::QIC(mod4b)
+pval.site.hetero = p.hmp(pvals, L = length(pvals))
 
 
 
+# mod.small = report_gee_table( dat = d,
+#                               formulaString = "T2_TRIM ~ treat + site",
+#                               analysisVarNames = c("T2_TRIM", "treat", "site"),
+#                               analysisLabel = "",
+#                               
+#                               return.gee.model = TRUE,
+#                               write.dir = NA )
+# 
+# mod.full = report_gee_table( dat = d,
+#                               formulaString = "T2_TRIM ~ treat*site",
+#                               analysisVarNames = c("T2_TRIM", "treat", "site"),
+#                               analysisLabel = "",
+#                               
+#                               return.gee.model = TRUE,
+#                               write.dir = NA )
+# 
+# mod.full$res
+# 
+# 
+# 
+# 
+# # doesn't return anything useful
+# compCoef(mod.small$mod, mod.full$mod)
+# 
+# library(glmtoolbox)
+# anova(mod.small$mod, mod.full$mod, test="score")
+# 
+# 
+# # doesn't work for gee package object
+# geepack::QIC(mod4b)
+# 
+# 
+# 
+# 
+# library(MuMIn)
+# 
+# # doesn't work with these auto-generated models because can't parse formula string
+# model.sel(mod.small$mod, mod.full$mod, rank = QIC)
+# 
+# mod.small2 = gee( T2_TRIM ~ treat + site,
+#              id = as.factor(uid),  
+#              corstr = "exchangeable",
+#              data = d %>% filter( !is.na(T2_TRIM) ) )
+# 
+# mod.full2 = gee( T2_TRIM ~ treat*site,
+#              id = as.factor(uid),  
+#              corstr = "exchangeable",
+#              data = d %>% filter( !is.na(T2_TRIM) ) )
+# 
+# MuMIn::model.sel(mod.small2, mod.full2, rank = QIC)
+# 
+# 
+# # sanity check
+# # smaller QCI is better
+# mod.tiny = gee( T2_TRIM ~ 1,
+#                  id = as.factor(uid),  
+#                  corstr = "exchangeable",
+#                  data = d %>% filter( !is.na(T2_TRIM) ) )
+# 
+# # doesn't make sense because it's saying the model without treatment is better...
+# MuMIn::model.sel(mod.small2, mod.tiny, rank = QIC)
+# 
+# 
+# library(harmonicmeanp)
+# 
+# pvals = runif( n = 100, min=0, max=1)
+# p.hmp(pvals, L = length(pvals))
 
-library(MuMIn)
 
-# doesn't work with these auto-generated models because can't parse formula string
-model.sel(mod.small$mod, mod.full$mod, rank = QIC)
-
-mod.small2 = gee( T2_TRIM ~ treat + site,
-             id = as.factor(uid),  
-             corstr = "exchangeable",
-             data = d %>% filter( !is.na(T2_TRIM) ) )
-
-mod.full2 = gee( T2_TRIM ~ treat*site,
-             id = as.factor(uid),  
-             corstr = "exchangeable",
-             data = d %>% filter( !is.na(T2_TRIM) ) )
-
-MuMIn::model.sel(mod.small2, mod.full2, rank = QIC)
-
-
-# sanity check
-# smaller QCI is better
-mod.tiny = gee( T2_TRIM ~ 1,
-                 id = as.factor(uid),  
-                 corstr = "exchangeable",
-                 data = d %>% filter( !is.na(T2_TRIM) ) )
-
-# doesn't make sense because it's saying the model without treatment is better...
-MuMIn::model.sel(mod.small2, mod.tiny, rank = QIC)
-
-
-library(harmonicmeanp)
-
-pvals = runif( n = 100, min=0, max=1)
-p.hmp(pvals, L = length(pvals))
-
-
-# extract interaction term p-values
-coefNames = row.names(mod.full$res)
-keepers = stringsWith( pattern = "treat:", x = coefNames )
-
-pvals = mod.full$res$pval[ coefNames %in% keepers ]
-
-p.hmp(pvals, L = length(pvals))
 
 
 
