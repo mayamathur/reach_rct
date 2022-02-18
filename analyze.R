@@ -206,7 +206,7 @@ res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC1" )
 
 
 
-# ~~ Model 3a: LMM with fixed effects ---------
+# ~~ Model 3a: LMM with fixed AND random effects of site ---------
 # also try LMM
 library(lme4)
 
@@ -227,7 +227,7 @@ ses[4]  # South Africa
 # **Empirical Bayes SE for South Africa: 0.03
 
 
-# ~~ Model 3b: LMM without effects ---------
+# ~~ Model 3b: LMM with random effects of site (but not fixed effects) ---------
 # also try LMM
 library(lme4)
 
@@ -235,10 +235,10 @@ lmm = lmer( T2_TRIM ~ treat + (1|site),
             data = d )
 
 summary(lmm)
-# **SE for South Africa FIXED effect: 0.27!!! (much bigger than either OLS or GEE)
 # **SE for treat: 0.03
 # issue with LMM: non-normal outcomes
 
+# get inference for site effects using empirical Bayes
 # LMM without FEs of site; inference from empirical Bayes
 re = ranef(lmm, condVar = TRUE)
 ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
@@ -278,7 +278,6 @@ summ4b$coefficients
 # Now they agree almost exactly!!!
 
 # ~~ Model 4c: GEE with fake site variable ---------
-
 
 d$fake.cluster = sample( 1:6, replace = TRUE, size = nrow(d) )
 
@@ -361,7 +360,9 @@ for ( .y in primYNames ) {
 # Per prereg, we're NOT reporting p-values for individual sites
 # Instead we're doing a single global test
 
+# As sanity check, can visually compare these to saved violin plots
 
+# ~ GEE models within sites --------------------------------------
 for ( .missMethod in missMethodsToRun ) {
   
   if (.missMethod == "MI") missingString = "Multiple imputation"
@@ -418,10 +419,91 @@ for ( .missMethod in missMethodsToRun ) {
 #@add global test of new model with all sites vs. main one
 
 
+# ~ Global test for site heterogeneity --------------------------------------
+
+
+mod.small = report_gee_table( dat = d,
+                              formulaString = "T2_TRIM ~ treat + site",
+                              analysisVarNames = c("T2_TRIM", "treat", "site"),
+                              analysisLabel = "",
+                              
+                              return.gee.model = TRUE,
+                              write.dir = NA )
+
+mod.full = report_gee_table( dat = d,
+                              formulaString = "T2_TRIM ~ treat*site",
+                              analysisVarNames = c("T2_TRIM", "treat", "site"),
+                              analysisLabel = "",
+                              
+                              return.gee.model = TRUE,
+                              write.dir = NA )
+
+mod.full$res
 
 
 
-# SET 4 GEE MODELS (SENSITIVITY ANALYSIS) -----------------------------------------------------------
+
+# doesn't return anything useful
+compCoef(mod.small$mod, mod.full$mod)
+
+library(glmtoolbox)
+anova(mod.small$mod, mod.full$mod, test="score")
+
+
+# doesn't work for gee package object
+geepack::QIC(mod4b)
+
+
+
+
+library(MuMIn)
+
+# doesn't work with these auto-generated models because can't parse formula string
+model.sel(mod.small$mod, mod.full$mod, rank = QIC)
+
+mod.small2 = gee( T2_TRIM ~ treat + site,
+             id = as.factor(uid),  
+             corstr = "exchangeable",
+             data = d %>% filter( !is.na(T2_TRIM) ) )
+
+mod.full2 = gee( T2_TRIM ~ treat*site,
+             id = as.factor(uid),  
+             corstr = "exchangeable",
+             data = d %>% filter( !is.na(T2_TRIM) ) )
+
+MuMIn::model.sel(mod.small2, mod.full2, rank = QIC)
+
+
+# sanity check
+# smaller QCI is better
+mod.tiny = gee( T2_TRIM ~ 1,
+                 id = as.factor(uid),  
+                 corstr = "exchangeable",
+                 data = d %>% filter( !is.na(T2_TRIM) ) )
+
+# doesn't make sense because it's saying the model without treatment is better...
+MuMIn::model.sel(mod.small2, mod.tiny, rank = QIC)
+
+
+library(harmonicmeanp)
+
+pvals = runif( n = 100, min=0, max=1)
+p.hmp(pvals, L = length(pvals))
+
+
+# extract interaction term p-values
+coefNames = row.names(mod.full$res)
+keepers = stringsWith( pattern = "treat:", x = coefNames )
+
+pvals = mod.full$res$pval[ coefNames %in% keepers ]
+
+p.hmp(pvals, L = length(pvals))
+
+
+
+
+
+# SET 4 GEE MODELS (PRECISION COVARIATES) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
@@ -536,22 +618,10 @@ meanNA(d$T3_TRIM[ d$treat == 1] )
 
 
 
-# ~ GEE with all time points --------------------------------
-
-#bm: in prep, need to make treatment indicator that's VARYING over time
-# 
-# report_gee_table(dat = l,
-#                  formulaString = "TRIM ~ treat.vary + site",
-#                  #@confirm with Tyler that he's happy with this
-#                  id.string = "as.factor(uid)",
-#                  analysisVarNames = c("TRIM", "treat.vary", "site"),  # for excluding missing data
-#                  analysisLabel = "sens_gee_long",  # will become an identifer column in dataset
-#                  corstr = "exchangeable",
-#                  se.type = "model",  # "model" or "mancl"
-#                  
-#                  write.dir = NA )
+# ~ SET 5: GEE with all time points --------------------------------
 
 
+# As sanity check, can compare these to plot_effect_maintenance.pdf
 
 #missMethodsToRun = c("CC", "MI")
 missMethodsToRun = "CC"
@@ -569,7 +639,7 @@ for ( .y in primYNames ) {
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
-    .results.dir = paste( results.dir, "/Sensitivity analyses/Analysis set 4/", missingString, sep = "" )
+    .results.dir = paste( results.dir, "/Analysis set 5/", missingString, sep = "" )
     
     analyze_one_outcome( dat.cc = l,
                          dats.imp = impsl,
@@ -579,8 +649,8 @@ for ( .y in primYNames ) {
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
                          analysisVarNames = c(.y, "treat.vary", "site"),
-                         analysisLabel = "set4_gee_long",
-                         corstr = "independence",
+                         analysisLabel = "set5_gee_long",
+                         corstr = "exchangeable",
                          .results.dir = .results.dir )
     
     

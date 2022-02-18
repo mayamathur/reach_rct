@@ -371,13 +371,14 @@ make_table_one = function(.d,
 # fit GEE with a given model formula and organize results nicely
 report_gee_table = function(dat,
                             formulaString,
-                            idString = "as.factor(site)",  # default is for main analysis, but change change to participant ID for long GEE sensitivity analysis
+                            idString = "as.factor(uid)",  # default is for main analysis, but change change to participant ID for long GEE sensitivity analysis
                             subsetString = NA,  # should we subset the data?
                             analysisVarNames,  # for excluding missing data
                             analysisLabel,  # will become an identifer column in dataset
                             corstr = "exchangeable",
                             se.type = "model",  # "model" or "mancl"
                             
+                            return.gee.model = FALSE,
                             write.dir = NA){
   
   # ~ Exclude missing data to please gee() --------------------------
@@ -501,7 +502,10 @@ report_gee_table = function(dat,
     write.csv( res, paste(analysisLabel, "_gee_estimates.csv") )
   }
   
-  return(res)
+  
+  if ( return.gee.model == FALSE ) return(res) else return( list(res = res, mod = mod) )
+  
+  
 }
 
 
