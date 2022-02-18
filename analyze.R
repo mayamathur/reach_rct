@@ -436,27 +436,27 @@ for ( .y in primYNames ) {
   #   
   #   if (.missMethod == "MI") missingString = "Multiple imputation"
   #   if (.missMethod == "CC") missingString = "Complete-case"
-    
-    .results.dir = paste( results.dir, "/Analysis set 6/", missingString, sep = "" )
-    
-    mod.int = analyze_one_outcome( missMethod = .missMethod,
-                         yName = .y,
-                         formulaString = .formulaString,
-                         idString = "as.factor(uid)",
-                         analysisVarNames = c(.fullYName, "treat", "site"),
-                         analysisLabel = "set6",
-                         corstr = "exchangeable",
-                         .results.dir = .results.dir )
-    
-    
-    # extract interaction term p-values
-    coefNames = row.names(mod.int$res.raw)
-    keepers = stringsWith( pattern = "treat:", x = coefNames )
-    
-    new.pvals = mod.int$res.raw$pval[ coefNames %in% keepers ]
-    
-    if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
-    
+  
+  .results.dir = paste( results.dir, "/Analysis set 6/", missingString, sep = "" )
+  
+  mod.int = analyze_one_outcome( missMethod = .missMethod,
+                                 yName = .y,
+                                 formulaString = .formulaString,
+                                 idString = "as.factor(uid)",
+                                 analysisVarNames = c(.fullYName, "treat", "site"),
+                                 analysisLabel = "set6",
+                                 corstr = "exchangeable",
+                                 .results.dir = .results.dir )
+  
+  
+  # extract interaction term p-values
+  coefNames = row.names(mod.int$res.raw)
+  keepers = stringsWith( pattern = "treat:", x = coefNames )
+  
+  new.pvals = mod.int$res.raw$pval[ coefNames %in% keepers ]
+  
+  if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
+  
   
 }
 
@@ -583,6 +583,83 @@ meanNA(d$T3_TRIM[ d$treat == 1] )
 # SENSITIVITY ANALYSES -----------------------------------------------------------
 
 # ~ 2 x 3 ANOVA --------------------------------
+
+# https://www.r-bloggers.com/2015/08/two-way-anova-with-repeated-measures/
+
+# https://stats.stackexchange.com/questions/15062/how-is-an-anova-calculated-for-a-repeated-measures-design-aov-vs-lm-in-r
+
+# repeated measures structure won't fit
+# "Error model is singular"
+summary( aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
+              data = l ) )
+
+# this does work
+full = aov( TRIM ~ treat * wave, data = l )
+small = aov( TRIM ~ 1, data = l )
+
+# "global" p-value for ANOVA model
+# this will capture secular trends as well since null model is intercept-only
+res = anova(full, small)
+
+update_result_csv( name = "ANOVA pval", 
+                   value = format.pval( res$`Pr(>F)`[2], eps  = 0.0001 ) )
+
+
+
+
+for ( .y in c(primYNames) ) {
+  
+  
+  .formulaStringFull = paste(.y, " ~ treat * wave", sep = "" )
+  .formulaStringSmall = paste(.y, " ~ 1", sep = "" )
+  .missMethod = "CC"
+  
+  cat( paste("\n\n**********Starting outcome", .y ) )
+  
+  # this does work
+  full = aov( eval( parse( text = .formulaStringFull ) ), data = l )
+  small = aov( eval( parse( text = .formulaStringSmall ) ), data = l )
+  
+  # "global" p-value for ANOVA model
+  # this will capture secular trends as well since null model is intercept-only
+  res = anova(full, small)
+  
+  update_result_csv( name = paste( "ANOVA pval", .y ), 
+                     value = format.pval( res$`Pr(>F)`[2], eps  = 0.0001 ) )
+  
+  
+}
+
+
+
+
+
+
+# ### DEBUGGING
+# res.aov = aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
+#                data = l )
+# 
+# small.aov = aov( TRIM ~ 1 + Error(site / (treat * wave) ),
+#                  data = l )
+# 
+# anova(res.aov, small.aov)
+# 
+# 
+# 
+# 
+# full = lm( TRIM ~ treat * wave + site, data = l )
+# summary(full)
+# 
+# anova(full)
+# 
+# 
+# summary( aov( TRIM ~ treat * wave + Error(site),
+#                data = l ) )
+# 
+# 
+# temp = lm( TRIM ~ treat * wave * site, data = l )
+# anova(temp)
+
 
 
 
@@ -727,74 +804,75 @@ analyze_one_outcome( missMethod = "CC",
 
 # in CC dataset
 
-dp = d
+
 
 if ( run.sanity == TRUE ) {
   
+  dp = d
   plotList = list()
   
-  for ( i in 1:length(allYNames) ) {
-    
-    .y = allYNames[i]
-    
-    
-    for ( .t in c("T2_", "T3_") ) {
-    
-    yName = paste( ".t, .y, sep = "" )
-    dp$Y = d[[yName]]
-    
-    treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
-    treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
-    
-    p <<- ggplot( data = dp,
-                  aes( x = site, 
-                       y = Y,
-                       fill = as.factor(treat),
-                       color = as.factor(treat) ) ) +
-      
-      # overall CC means
-      geom_hline( yintercept = treat0.mean,
-                  lty = 2,
-                  color = "black" ) + 
-      
-      geom_hline( yintercept = treat1.mean,
-                  lty = 2,
-                  color = "orange" ) + 
-      
-      geom_violin(draw_quantiles = TRUE,
-                  alpha = 0.4,
-                  position="dodge" ) + 
-      
-      # bars: CI limits
-      stat_summary(fun.data = mean_cl_normal,
-                   #fun.args = list(mult = 1),
-                   #aes( color = as.factor(treat) ),
-                   geom = "pointrange", 
-                   position = position_dodge(width = 0.9) ) +
-      
-      scale_fill_manual( values = c("black", "orange" ) ) +
-      scale_color_manual( values = c("black", "orange" ) ) +
-      
-      ylab(yName) +
-      
-      theme_classic()
-    
-    plotList[[i]] = p
-    
-    
-  } # end loop over.y
   
-  
-  # plotList[[2]]
-  # plotList[[3]]
-  
-  setwd(results.aux.dir)
-  ggsave( paste(.t, "plot_violins_by_site.pdf", sep = "" ),
-         do.call("arrangeGrob", plotList),
-         width = 20,
-         height = 15)
-  
-  
+  for ( .t in c("T2_", "T3_") ) {
+    
+    for ( i in 1:length(allYNames) ) {
+      
+      .y = allYNames[i]
+      
+      yName = paste( .t, .y, sep = "" )
+      dp$Y = d[[yName]]
+      
+      treat0.mean = meanNA( d[[yName]][ d$treat == 0 ] )
+      treat1.mean = meanNA( d[[yName]][ d$treat == 1 ] )
+      
+      p <<- ggplot( data = dp,
+                    aes( x = site, 
+                         y = Y,
+                         fill = as.factor(treat),
+                         color = as.factor(treat) ) ) +
+        
+        # overall CC means
+        geom_hline( yintercept = treat0.mean,
+                    lty = 2,
+                    color = "black" ) + 
+        
+        geom_hline( yintercept = treat1.mean,
+                    lty = 2,
+                    color = "orange" ) + 
+        
+        geom_violin(draw_quantiles = TRUE,
+                    alpha = 0.4,
+                    position="dodge" ) + 
+        
+        # bars: CI limits
+        stat_summary(fun.data = mean_cl_normal,
+                     #fun.args = list(mult = 1),
+                     #aes( color = as.factor(treat) ),
+                     geom = "pointrange", 
+                     position = position_dodge(width = 0.9) ) +
+        
+        scale_fill_manual( values = c("black", "orange" ) ) +
+        scale_color_manual( values = c("black", "orange" ) ) +
+        
+        ylab(yName) +
+        
+        theme_classic()
+      
+      plotList[[i]] = p
+      
+      
+    } # end loop over.y
+    
+    
+    # plotList[[2]]
+    # plotList[[3]]
+    
+    setwd(results.aux.dir)
+    ggsave( paste(.t, "plot_violins_by_site.pdf", sep = "" ),
+            do.call("arrangeGrob", plotList),
+            width = 20,
+            height = 15)
+    
+    
   } # end loop over T2, T3
   
 }
