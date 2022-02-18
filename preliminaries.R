@@ -20,6 +20,7 @@ library(gee)
 library(ggplot2)
 library(gridExtra)
 library(sandwich)
+library(harmonicmeanp)
 
 options(scipen = 999)
 

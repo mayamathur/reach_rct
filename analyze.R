@@ -130,9 +130,8 @@ t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 # **For these analyses, Bonferroni significance is only shown for secondaries,
 #  and in paper, it should only be reported for coefficient "treat" (not sites)
 
-missMethodsToRun = "CC"
-
-#missMethodsToRun = c("CC", "MI")
+#missMethodsToRun = "CC"
+missMethodsToRun = c("CC", "MI")
 
 for ( .y in c(primYNames, secYNames) ) {
   
@@ -670,8 +669,8 @@ for ( .y in c(primYNames) ) {
 
 # As sanity check, can compare these to plot_effect_maintenance.pdf
 
-#missMethodsToRun = c("CC", "MI")
-missMethodsToRun = "CC"
+missMethodsToRun = c("CC", "MI")
+#missMethodsToRun = "CC"
 
 #@ this needs more sanity checks
 for ( .y in primYNames ) {

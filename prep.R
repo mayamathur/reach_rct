@@ -33,8 +33,7 @@ run.sanity = FALSE
 # should we impute from scratch or read in saved datasets?
 impute.from.scratch = FALSE
 # number of imputations
-#@increase later
-M = 3
+M = 10
 
 # read in raw data
 setwd(raw.data.dir)
