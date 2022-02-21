@@ -510,7 +510,7 @@ for ( .y in c(primYNames, secYNames) ) {
 # That seems to be because gender has evil tiny category called "RECODE TROUBLE"; return to this after dataset is fixed
 
 
-# PLOTS: EFFECT MAINTENANCE OVER TIME -----------------------------------------------------------
+# EFFECT MAINTENANCE OVER TIME (PLOT AND SIMPLE STATS) -----------------------------------------------------------
 
 # one for each primary outcome
 # points: means
@@ -534,6 +534,17 @@ for ( i in 1:length(primYNames) ) {
   # sanity check: should be very similar
   #abs( agg$SE - agg$SE.plain )
   
+  # simple stats for paper
+  agg.treat = agg %>% filter( treat == 1 )
+  initial.change = agg.treat$Mean[ agg.treat$wave == "T2" ] - agg.treat$Mean[ agg.treat$wave == "T1" ]
+  ultimate.change = agg.treat$Mean[ agg.treat$wave == "T3" ] - agg.treat$Mean[ agg.treat$wave == "T1" ]
+
+  # note that if initial.change and ultimate.change disagree in sign, then the percentage will
+  #  be negative
+  update_result_csv( name = paste("Perc effect maintained at T3 for", .y, sep = " "),
+                     value = round( 100 * ultimate.change/initial.change ) )
+  
+ 
   p <<- ggplot( data = agg,
                 aes( x = wave, 
                      y = Mean,
@@ -576,6 +587,7 @@ ggsave("plot_effect_maintenance.pdf",
 meanNA(d$T1_TRIM[ d$treat == 1] )
 meanNA(d$T2_TRIM[ d$treat == 1] )
 meanNA(d$T3_TRIM[ d$treat == 1] )
+
 
 
 
