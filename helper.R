@@ -342,11 +342,11 @@ make_table_one = function(.d,
                       countNA = TRUE,
                       .tab1 = t)
   
-  t = table1_add_row( x = .d$religion,
-                      var.header = "Religion",  
-                      type = "cat",
-                      countNA = TRUE,
-                      .tab1 = t)
+  # t = table1_add_row( x = .d$religion,
+  #                     var.header = "Religion",  
+  #                     type = "cat",
+  #                     countNA = TRUE,
+  #                     .tab1 = t)
   
   t = table1_add_row( x = .d$marstat,
                       var.header = "Marital status",  
@@ -368,7 +368,7 @@ make_table_one = function(.d,
                         countNA = TRUE,
                         .tab1 = t)
     
-    t = table1_add_row( x = .d$anyNA.T2.primY,
+    t = table1_add_row( x = .d$anyNA.T3.primY,
                         var.header = "Missing any T3 primary Y",  
                         type = "bin01",
                         countNA = TRUE,

@@ -37,7 +37,9 @@ M = 10
 
 # read in raw data
 setwd(raw.data.dir)
-d = read_csv("07.02.21_across sites RCT data.csv") 
+#d = read_csv("07.02.21_across sites RCT data.csv") 
+setwd("2022-3-18")
+d = read_excel("22-3-18 RCT raw data - updated.xlsx", sheet = 1) 
 
 # fix irregular variable names
 # currently coded with a number separating "BSI" from "dep", which will confuse later recoding
@@ -94,8 +96,6 @@ d$treat = recode(d$Group,
                  `1` = 1,
                  `2` = 0)
 
-
-#@ subject 171 has gender=0, but that's not in codebook
 d$gender = recode(d$GENDER,
                   `1` = "Male", 
                   `2` = "Female",
@@ -115,36 +115,29 @@ d$educ = recode(d$EDUCATION,
                `1` = "a.LtHS", 
                `2` = "b.HS",
                `3` = "c.CollegePlus",
-               `4` = "d.Other",
                .default = "RECODE TROUBLE")
 
-# these differed based on countries' own currencies
-#@check about number of categories
 d$income = recode(d$HOUSEHOLD_INCOME,
-                  `1` = "a", 
-                  `2` = "b",
-                  `3` = "c",
-                  `4` = "d",
-                  `5` = "e",
-                  `6` = "f",
-                  `7` = "g",
-                  `8` = "h",
-                  `9` = "i",
+                  `1` = "a.LtAvg", 
+                  `2` = "b.Avg",
+                  `3` = "c.1SDAboveAvg",
+                  `4` = "d.3SDAboveAvg",
                   .default = "RECODE TROUBLE")
 
 d$isReligious = recode(d$RELIGION_YN,
                        `1` = 1,
                        `2` = 0)
 
-d$religion = recode(d$RELIGION,
-                    `1` = "Christian", 
-                    `2` = "Catholic",
-                    `3` = "Protestant",
-                    `4` = "Buddhist",
-                    `5` = "Muslim",
-                    `6` = "Other",
-                    `8` = "UNKNOWN_CAT",
-                    .default = "RECODE TROUBLE")
+# CURRENTLY DOESN'T EXIST
+# d$religion = recode(d$RELIGION,
+#                     `1` = "Christian", 
+#                     `2` = "Catholic",
+#                     `3` = "Protestant",
+#                     `4` = "Buddhist",
+#                     `5` = "Muslim",
+#                     `6` = "Other",
+#                     `8` = "UNKNOWN_CAT",
+#                     .default = "RECODE TROUBLE")
 
 
 d$marstat = recode(d$MARRIAGE,
@@ -185,9 +178,9 @@ d = d %>% select( -c(T1_DATE,
                      EDUCATION,
                      EDU_OTHER,
                      HOUSEHOLD_INCOME,
-                     RELIGION,
+                     #RELIGION,
                      RELIGION_YN,
-                     RELI_OTHER,
+                     #RELI_OTHER,
                      FRE_RELI_EVENT,
                      T1_severity,
                      T1_DTFS_EVENT) )
