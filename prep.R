@@ -4,10 +4,17 @@
 # To do:
 # - Make pretty treatment variable, etc., for plots
 
+# - **Exclude subjects <18 years
+
 # Questions for Man Yee:
 # https://github.com/mayamathur/reach_rct/issues
 
 # - *Prereg has two different lists of secondaries: (TFS, forbearance, DTFS, flourishing index) vs. (EFS, forbearance, DTFS, flourishing)
+
+# 
+# 1. All sites except for the Ukraine REALIS site have some participants below 18 years of age (some had participants as young as 13). Do we know if all the sites obtained (or needed to obtain) parental consent for legal minors? Maybe you all have already discussed this issue, but I'm mentioning it in case it is an issue that still needs to be addressed.
+# 2. Just in terms of labeling, we probably want the "Is religious" variable to be named something like "Religiously affiliated" because the original survey items center on religious affiliation rather than religious identity. For education, I recommend labeling the 3 categories something like "Some secondary education or below," "Completed secondary education," and "Some postsecondary education or higher."
+# 3. Since most of the other categorical sociodemographic factors have 2/3 categories, perhaps we should report marital status in a similar way (i.e., just 2/3 categories)? Just a thought.
 
 
 # PRELIMINARIES -----------------------------------------------------------
@@ -31,15 +38,15 @@ overwrite.prepped.data = TRUE
 run.sanity = FALSE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = FALSE
+impute.from.scratch = TRUE
 # number of imputations
 M = 10
 
 # read in raw data
 setwd(raw.data.dir)
 #d = read_csv("07.02.21_across sites RCT data.csv") 
-setwd("2022-3-18")
-d = read_excel("22-3-18 RCT raw data - updated.xlsx", sheet = 1) 
+setwd("2022-3-22")
+d = read_excel("22-3-22 RCT raw data - updated.xlsx", sheet = 1) 
 
 # fix irregular variable names
 # currently coded with a number separating "BSI" from "dep", which will confuse later recoding
@@ -124,7 +131,7 @@ d$income = recode(d$HOUSEHOLD_INCOME,
                   `4` = "d.3SDAboveAvg",
                   .default = "RECODE TROUBLE")
 
-d$isReligious = recode(d$RELIGION_YN,
+d$hasReligAffil = recode(d$RELIGION_YN,
                        `1` = 1,
                        `2` = 0)
 
@@ -162,6 +169,7 @@ names(d)[ names(d) %in% varNames ] = newNames
 # RENAME VARIABLES THAT DON'T NEED RECODING -----------------------------------------------------------
 
 d = d %>% rename( age = AGE )
+d$age = as.numeric(d$age)
 
 # DROP VARIABLES -----------------------------------------------------------
 
@@ -186,6 +194,9 @@ d = d %>% select( -c(T1_DATE,
                      T1_DTFS_EVENT) )
 
 
+# EXCLUDE MINORS -----------------------------------------------------------
+
+d = d %>% filter(age >= 18)
 
 
 # RECODE SCALES -----------------------------------------------------------
@@ -319,6 +330,7 @@ if ( impute.from.scratch == TRUE ) {
   imps$loggedEvents 
   imps$loggedEvents$dep
   
+  #bm: now has "constant" for site and gender
   # make sure there is no missing data in the imputations
   any.missing = apply( complete(imps,1),
                        2,

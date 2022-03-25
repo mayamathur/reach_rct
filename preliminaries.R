@@ -99,7 +99,7 @@ unusedYnamesWide = c( paste( "T1_", unusedYnames, sep=""),
 demoVarsToAnalyze = c("site", "age", "gender")
 
 # auxiliary vars in imputation model
-demoVarsAux = c("eth", "educ", "income", "isReligious", "religion", "marstat")
+demoVarsAux = c("eth", "educ", "income", "hasReligiousAffil", "religion", "marstat")
 
 
 
