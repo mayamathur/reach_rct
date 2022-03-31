@@ -76,12 +76,11 @@ primYNamesWide = c( paste( "T1_", primYNames, sep=""),
                     paste( "T3_", primYNames, sep="") )
 
 # secondary outcomes (4)
-#@not sure which is flourishing index vs. forbearance scale
 # Trait Forgiveness (TrFS)
-# Forbearance Scale (@NOT IN DATASET)
+# Forbearance Scale (FOR)
 # Decision to Forgive Scale (DTFS)
 # Flourishing Index (FSFS per codebook in xlsx file)
-secYNames = c("TrFS", "FSFS", "DTFS" )
+secYNames = c("TrFS", "FSFS", "DTFS", "FOR" )
 # names with times, as in wide-format data
 secYNamesWide = c( paste( "T1_", secYNames, sep=""),
                    paste( "T2_", secYNames, sep=""),

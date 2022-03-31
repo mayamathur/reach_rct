@@ -340,6 +340,7 @@ if ( impute.from.scratch == TRUE ) {
   
   table(is.na(fake$T2_DTFS))
   table(is.na(d$T2_DTFS))
+  table(is.na(fake$T2_FOR))
 
   # **important: any.missing WILL have missing values on auxiliary vars used to make the imputation model
   # because we're not imputing those vars
