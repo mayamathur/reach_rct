@@ -185,7 +185,7 @@ for ( .y in c(primYNames, secYNames) ) {
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site"),
-                         analysisLabel = "set1",
+                         analysisLabel = paste("set1_outcome_", .y, sep = " " ),
                          bonferroni.alpha = bonferroni.alpha,
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
@@ -199,144 +199,162 @@ for ( .y in c(primYNames, secYNames) ) {
 
 # ~ Sanity checks ------------------------------
 
-# why are site coefficients so precise?
-# note that Columbia is reference in coeffs above
-d %>% group_by(site) %>%
-  summarise( meanNA(T2_TRIM) )
+if ( run.sanity == TRUE ) {
+  # why are site coefficients so precise?
+  # note that Columbia is reference in coeffs above
+  d %>% group_by(site) %>%
+    summarise( meanNA(T2_TRIM) )
+  
+  d %>% group_by(treat, site) %>%
+    summarise( meanNA(T2_TRIM) )
+  
+  
+  
+  # ~~ Model 1: OLS ---------
+  ols = lm( T2_TRIM ~ treat + site, data = d )
+  summary(ols)  # model-based SEs (might be wrong)
+  # example: SE for South Africa  = 0.04 (similar for other sites)
+  # for treat: 0.03
+  
+  # ~~ Model 2: OLS-HC0 ---------
+  # now with HC0 SEs
+  res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC0" )
+  # **SE for South Africa nearly the same
+  # for treat: 0.04
+  
+  
+  # ~~ Model 2b: OLS-HC1 ---------
+  # this is better in finite samples
+  # https://economics.mit.edu/files/7422
+  
+  res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC1" )
+  # SE for South Africa nearly the same
+  # for treat: 0.03
+  
+  
+  
+  # ~~ Model 3a: LMM with fixed AND random effects of site ---------
+  # also try LMM
+  library(lme4)
+  
+  lmm = lmer( T2_TRIM ~ treat + site + (1|site),
+              data = d )
+  
+  summary(lmm)
+  # SE for South Africa FIXED effect: 0.27!!! (much bigger than either OLS or GEE)
+  # SE for treat: 0.03
+  # issue with LMM: non-normal outcomes
+  
+  # LMM without FEs of site; inference from empirical Bayes
+  re = ranef(lmm, condVar = TRUE)
+  ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
+  ses = as.numeric(ses)
+  ses[4]  # South Africa
+  
+  # **Empirical Bayes SE for South Africa: 0.03
+  
+  
+  # ~~ Model 3b: LMM with random effects of site (but not fixed effects) ---------
+  # also try LMM
+  library(lme4)
+  
+  lmm = lmer( T2_TRIM ~ treat + (1|site),
+              data = d )
+  
+  summary(lmm)
+  # **SE for treat: 0.03
+  # issue with LMM: non-normal outcomes
+  
+  # get inference for site effects using empirical Bayes
+  # LMM without FEs of site; inference from empirical Bayes
+  re = ranef(lmm, condVar = TRUE)
+  ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
+  ses = as.numeric(ses)
+  ses[4]  # South Africa
+  
+  #**Empirical Bayes SE for South Africa: 0.03
+  
+  # ~~ Model 4: GEE (prespecified) ---------
+  
+  mod4 = gee( T2_TRIM ~ treat + site,
+              id = as.factor(site),  
+              corstr = "independence",
+              data = d %>% filter( !is.na(T2_TRIM) ) )
+  
+  summ4 = summary(mod4)
+  summ4$coefficients
+  
+  # **Naive SE (South Africa, treat): (0.04, 0.03)
+  # **Robust SE: (0.0008, 0.07)
+  
+  
+  
+  # ~~ Model 4b: GEE with clustering by uid instead of site ---------
+  
+  mod4b = gee( T2_TRIM ~ treat + site,
+               id = as.factor(uid),  
+               corstr = "independence",
+               data = d %>% filter( !is.na(T2_TRIM) ) )
+  
+  summ4b = summary(mod4b)
+  summ4b$coefficients
+  
+  # **Naive SE (South Africa, treat): (0.04, 0.03)
+  # **Robust SE: (0.04, 0.03)
+  
+  # Now they agree almost exactly!!!
+  
+  # ~~ Model 4c: GEE with fake site variable ---------
+  
+  d$fake.cluster = sample( 1:6, replace = TRUE, size = nrow(d) )
+  
+  mod4c = gee( T2_TRIM ~ treat + site,
+               id = as.factor(fake.cluster),  
+               corstr = "independence",
+               data = d %>% filter( !is.na(T2_TRIM) ) )
+  
+  summ4c = summary(mod4c)
+  summ4c$coefficients
+  
+  # **Now naive and robust still match!
+  # This experiment suggests that the problem is having site as fixed effect
+  #  AND as clustering variable (not having too few clusters).
+  
+  # ~~ Conclusions of sanity checks ---------
+  
+  # The culprit is the robust SEs in GEE (not the naive ones), and only when the 
+  #  working correlation structure uses id = site rather than id = uid.
+  
+  # on having both fixed and REs for same variable:
+  # https://stats.stackexchange.com/questions/263194/does-it-make-sense-to-include-a-factor-as-both-fixed-and-random-factor-in-a-line
+  
+  # rationale in slide deck:
+  # Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
+  # 
+  # The point of the GEE model here is to flexibly account for correlated observations between and possibly also within sites.
+  # Also, nonnormal outcomes
+  
+  
+}
 
-d %>% group_by(treat, site) %>%
-  summarise( meanNA(T2_TRIM) )
-
-
-
-# ~~ Model 1: OLS ---------
-ols = lm( T2_TRIM ~ treat + site, data = d )
-summary(ols)  # model-based SEs (might be wrong)
-# example: SE for South Africa  = 0.04 (similar for other sites)
-# for treat: 0.03
-
-# ~~ Model 2: OLS-HC0 ---------
-# now with HC0 SEs
-res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC0" )
-# **SE for South Africa nearly the same
-# for treat: 0.04
-
-
-# ~~ Model 2b: OLS-HC1 ---------
-# this is better in finite samples
-# https://economics.mit.edu/files/7422
-
-res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC1" )
-# SE for South Africa nearly the same
-# for treat: 0.03
-
-
-
-# ~~ Model 3a: LMM with fixed AND random effects of site ---------
-# also try LMM
-library(lme4)
-
-lmm = lmer( T2_TRIM ~ treat + site + (1|site),
-            data = d )
-
-summary(lmm)
-# SE for South Africa FIXED effect: 0.27!!! (much bigger than either OLS or GEE)
-# SE for treat: 0.03
-# issue with LMM: non-normal outcomes
-
-# LMM without FEs of site; inference from empirical Bayes
-re = ranef(lmm, condVar = TRUE)
-ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
-ses = as.numeric(ses)
-ses[4]  # South Africa
-
-# **Empirical Bayes SE for South Africa: 0.03
-
-
-# ~~ Model 3b: LMM with random effects of site (but not fixed effects) ---------
-# also try LMM
-library(lme4)
-
-lmm = lmer( T2_TRIM ~ treat + (1|site),
-            data = d )
-
-summary(lmm)
-# **SE for treat: 0.03
-# issue with LMM: non-normal outcomes
-
-# get inference for site effects using empirical Bayes
-# LMM without FEs of site; inference from empirical Bayes
-re = ranef(lmm, condVar = TRUE)
-ses = sqrt( unlist( attr(re[[1]], "postVar") ) )
-ses = as.numeric(ses)
-ses[4]  # South Africa
-
-#**Empirical Bayes SE for South Africa: 0.03
-
-# ~~ Model 4: GEE (prespecified) ---------
-
-mod4 = gee( T2_TRIM ~ treat + site,
-            id = as.factor(site),  
-            corstr = "independence",
-            data = d %>% filter( !is.na(T2_TRIM) ) )
-
-summ4 = summary(mod4)
-summ4$coefficients
-
-# **Naive SE (South Africa, treat): (0.04, 0.03)
-# **Robust SE: (0.0008, 0.07)
-
-
-
-# ~~ Model 4b: GEE with clustering by uid instead of site ---------
-
-mod4b = gee( T2_TRIM ~ treat + site,
-             id = as.factor(uid),  
-             corstr = "independence",
-             data = d %>% filter( !is.na(T2_TRIM) ) )
-
-summ4b = summary(mod4b)
-summ4b$coefficients
-
-# **Naive SE (South Africa, treat): (0.04, 0.03)
-# **Robust SE: (0.04, 0.03)
-
-# Now they agree almost exactly!!!
-
-# ~~ Model 4c: GEE with fake site variable ---------
-
-d$fake.cluster = sample( 1:6, replace = TRUE, size = nrow(d) )
-
-mod4c = gee( T2_TRIM ~ treat + site,
-             id = as.factor(fake.cluster),  
-             corstr = "independence",
-             data = d %>% filter( !is.na(T2_TRIM) ) )
-
-summ4c = summary(mod4c)
-summ4c$coefficients
-
-# **Now naive and robust still match!
-# This experiment suggests that the problem is having site as fixed effect
-#  AND as clustering variable (not having too few clusters).
 
 
 
 
 
-# ~~ Conclusions ---------
 
 
-# The culprit is the robust SEs in GEE (not the naive ones), and only when the 
-#  working correlation structure uses id = site rather than id = uid.
 
-# on having both fixed and REs for same variable:
-# https://stats.stackexchange.com/questions/263194/does-it-make-sense-to-include-a-factor-as-both-fixed-and-random-factor-in-a-line
 
-# rationale in slide deck:
-# Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
-# 
-# The point of the GEE model here is to flexibly account for correlated observations between and possibly also within sites.
-# Also, nonnormal outcomes
+
+
+# ~ Single table with all outcomes ---------------------------
+
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 1/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "*table_2_set1_manuscript.xlsx",
+                   .var.name = "treat")
 
 
 
@@ -369,7 +387,7 @@ for ( .y in primYNames ) {
                          idString = "as.factor(uid)",
                          
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
-                         analysisLabel = "set2",
+                         analysisLabel = paste("set2_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          bonferroni.alpha = 0.005,
                          .results.dir = .results.dir )
@@ -378,6 +396,15 @@ for ( .y in primYNames ) {
   }
 }
 
+
+
+# ~ Single table with all outcomes ---------------------------
+
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 2/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "*table_set2_manuscript.xlsx",
+                   .var.name = "treat:T1_high_TrFSTRUE")
 
 
 
@@ -416,7 +443,7 @@ for ( .missMethod in missMethodsToRun ) {
         subsetString = paste( "site == '", .site, "'", sep="" ),
         
         analysisVarNames = c(.fullYName, "treat"),
-        analysisLabel = paste("set3", .y, .site, sep="_"),
+        analysisLabel = paste("set3_outcome_", .y, sep = " " ),
         corstr = "exchangeable",
         .results.dir = NA )
       
@@ -470,7 +497,7 @@ for ( .y in primYNames ) {
                                  formulaString = .formulaString,
                                  idString = "as.factor(uid)",
                                  analysisVarNames = c(.fullYName, "treat", "site"),
-                                 analysisLabel = "set6",
+                                 analysisLabel = paste("set6_outcome_", .y, sep = " " ),
                                  corstr = "exchangeable",
                                  .results.dir = .results.dir )
   
@@ -524,7 +551,7 @@ for ( .y in c(primYNames, secYNames) ) {
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
                          analysisVarNames = c(.fullYName, "treat", "site", "age", "gender", "T1_BSIdep", "T1_BSIanx", "T1_TRIM"),
-                         analysisLabel = "set4",
+                         analysisLabel = paste("set4_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
     
@@ -535,6 +562,17 @@ for ( .y in c(primYNames, secYNames) ) {
 
 # @Gives warnings that SEs differed by more than 0.01
 # That seems to be because gender has evil tiny category called "RECODE TROUBLE"; return to this after dataset is fixed
+
+
+
+# ~ Single table with all outcomes ---------------------------
+
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 4/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "*table_set4_manuscript.xlsx",
+                   .var.name = "treat")
+
 
 
 # EFFECT MAINTENANCE OVER TIME (PLOT AND SIMPLE STATS) -----------------------------------------------------------
@@ -552,7 +590,7 @@ for ( i in 1:length(primYNames) ) {
   lp$Y = l[[.y]]
   
   #@later, check with TVW about type of SE to show here
-  agg = lp %>% group_by(treat, wave) %>%
+  agg = lp %>% group_by(treat.pretty, wave) %>%
     summarise( Mean = meanNA(Y),
                SE = marginal_hc_se(Y),
                # sanity check:
@@ -562,7 +600,7 @@ for ( i in 1:length(primYNames) ) {
   #abs( agg$SE - agg$SE.plain )
   
   # simple stats for paper
-  agg.treat = agg %>% filter( treat == 1 )
+  agg.treat = agg %>% filter( treat.pretty == "IT" )
   initial.change = agg.treat$Mean[ agg.treat$wave == "T2" ] - agg.treat$Mean[ agg.treat$wave == "T1" ]
   ultimate.change = agg.treat$Mean[ agg.treat$wave == "T3" ] - agg.treat$Mean[ agg.treat$wave == "T1" ]
 
@@ -572,29 +610,45 @@ for ( i in 1:length(primYNames) ) {
                      value = round( 100 * ultimate.change/initial.change ) )
   
  
+  # get pretty Y label
+  if (.y == "TRIM") .ylab = "TRIM"
+  if (.y == "BSIanx") .ylab = "Anxiety"
+  if (.y == "BSIdep") .ylab = "Depression"
+  
+  # make the plot
   p <<- ggplot( data = agg,
                 aes( x = wave, 
                      y = Mean,
-                     color = as.factor(treat) ) ) +
+                     color = treat.pretty ) ) +
     
     geom_hline( yintercept = 0,
                 lty = 2,
                 color = "gray") +
     
     geom_point(size = 1.2) + 
-    geom_line( aes(group = as.factor(treat)) ) +
+    geom_line( aes(group = treat.pretty) ) +
     geom_errorbar( aes(ymin = Mean - SE,
                        ymax = Mean + SE),
                    width = 0 ) +
     
+    scale_y_continuous( limits = c(-0.35, 0.35),
+                        breaks = round( seq(-0.3, 0.3, 0.1), 2) ) +
     scale_color_manual( values = c("black", "orange" ) ) +
+    labs(color='Group')  +
     
-    ylab(.y) +
+    ylab(.ylab) +
+    xlab("Time point") +
     
-    theme_classic()
+    theme_bw()
   
   plotList[[i]] = p
   
+  
+  setwd(results.dir)
+  setwd("Figures")
+  ggsave( paste("plot_effect_maintenance_outcome_", .y, ".pdf", sep="" ),
+          width = 6,
+          height = 4)
   
 } # end loop over.y
 
@@ -602,12 +656,15 @@ for ( i in 1:length(primYNames) ) {
 # plotList[[2]]
 # plotList[[3]]
 
+# optional: 
 setwd(results.dir)
 setwd("Figures")
-ggsave("plot_effect_maintenance.pdf",
-       do.call("arrangeGrob", plotList),
-       width = 6,
-       height = 10)
+pCombined = cowplot::plot_grid(plotlist = plotList,
+                               nrow = 1)
+ggsave( paste("plot_effect_maintenance_all_outcomes.pdf", sep="" ),
+        width = 18,
+        height = 4)
+
 
 
 # sanity check
@@ -734,7 +791,7 @@ for ( .y in primYNames ) {
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
                          analysisVarNames = c(.y, "treat.vary", "site"),
-                         analysisLabel = "set5_gee_long",
+                         analysisLabel = paste("set5_geelong_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
     
@@ -742,6 +799,14 @@ for ( .y in primYNames ) {
   }
 }
 
+
+# ~ Single table with all outcomes ---------------------------
+
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 5/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "*table_set5_manuscript.xlsx",
+                   .var.name = "treat.vary")
 
 
 

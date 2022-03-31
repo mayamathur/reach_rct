@@ -620,10 +620,11 @@ analyze_one_outcome = function( dat.cc = d,
     if (missMethod == "CC") missingString = "completeCase"
     if (missMethod == "MI") missingString = "multImp"
     
-    string = paste( analysisLabel, yName, missingString, "_gee_table_raw", ".csv", sep="_" )
+    #bm
+    string = paste( analysisLabel, missingString, "_gee_table_raw", ".csv", sep="_" )
     write_csv(res.raw, string)
     
-    string = paste( analysisLabel, yName, missingString, "_gee_table_pretty", ".csv", sep="_" )
+    string = paste( analysisLabel, missingString, "_gee_table_pretty", ".csv", sep="_" )
     write_csv(res.nice, string)
   }
   
@@ -820,6 +821,33 @@ marginal_hc_se = function(vec, hc.type = "HC1") {
   return(se.hc)
 }
 
+
+# organize all results from one analysis set into a single table with
+#   just one coefficient of interest
+table_all_outcomes = function(.results.dir,
+                              .filename,
+                              .var.name) {
+  
+  setwd(.results.dir)
+  
+  # go through only the "pretty" tables and collect the coefs for site
+  
+  files = list.files()
+  files = files[ grepl("pretty", files) ]
+  
+  for ( f in files ) {
+    tab = fread(f)
+    
+    new.row = tab %>% filter(var.name == .var.name) 
+    if ( f == files[1] ) agg = new.row else agg = bind_rows(agg, new.row)
+  }
+  
+  # note this now uses the global var results.dir
+  setwd(results.dir)
+  setwd("Tables")
+  write.xlsx(agg, .filename, row.names = FALSE)
+  
+}
 
 
 # for reproducible manuscript-writing
