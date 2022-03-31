@@ -341,19 +341,12 @@ if ( run.sanity == TRUE ) {
 
 
 
-
-
-
-
-
-
-
 # ~ Single table with all outcomes ---------------------------
 
 table_all_outcomes(.results.dir = paste( results.dir,
                                          "Analysis set 1/Multiple imputation",
                                          sep = "/" ),
-                   .filename = "*table_2_set1_manuscript.xlsx",
+                   .filename = "*table_set1_manuscript.xlsx",
                    .var.name = "treat")
 
 
@@ -363,8 +356,6 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
-
-#missMethodsToRun = "CC"
 
 #@NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
 #  but not site, so should not report the site p-values in this model
