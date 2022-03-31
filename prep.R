@@ -1,20 +1,11 @@
 
 # NOTES -----------------------------------------------------------
 
-# To do:
-# - Make pretty treatment variable, etc., for plots
-
-# - **Exclude subjects <18 years
 
 # Questions for Man Yee:
 # https://github.com/mayamathur/reach_rct/issues
 
 # - *Prereg has two different lists of secondaries: (TFS, forbearance, DTFS, flourishing index) vs. (EFS, forbearance, DTFS, flourishing)
-
-# 
-# 1. All sites except for the Ukraine REALIS site have some participants below 18 years of age (some had participants as young as 13). Do we know if all the sites obtained (or needed to obtain) parental consent for legal minors? Maybe you all have already discussed this issue, but I'm mentioning it in case it is an issue that still needs to be addressed.
-# 2. Just in terms of labeling, we probably want the "Is religious" variable to be named something like "Religiously affiliated" because the original survey items center on religious affiliation rather than religious identity. For education, I recommend labeling the 3 categories something like "Some secondary education or below," "Completed secondary education," and "Some postsecondary education or higher."
-# 3. Since most of the other categorical sociodemographic factors have 2/3 categories, perhaps we should report marital status in a similar way (i.e., just 2/3 categories)? Just a thought.
 
 
 # PRELIMINARIES -----------------------------------------------------------
@@ -118,11 +109,14 @@ d$eth = recode(d$Ethnicity,
                `6` = "Other",
                .default = "RECODE TROUBLE")
 
+# Richard's suggested category names for table:
+#"Some secondary education or below," "Completed secondary education," and "Some postsecondary education or higher."
 d$educ = recode(d$EDUCATION,
                `1` = "a.LtHS", 
                `2` = "b.HS",
                `3` = "c.CollegePlus",
                .default = "RECODE TROUBLE")
+
 
 d$income = recode(d$HOUSEHOLD_INCOME,
                   `1` = "a.LtAvg", 

@@ -145,7 +145,6 @@ wrangle_post_imputation = function(.dat) {
   # vars that weren't useful to carry through imputation process
   
   # indicators for having any missingness on a primary outcome at each time
-  message("You'll need to edit var names here after Man Yee recodes")
   .dat = .dat %>% rowwise() %>%
     mutate( anyNA.T1.primY = any( is.na(T1_BSIdep), is.na(T1_BSIanx), is.na(T1_TRIM) ),
             anyNA.T2.primY = any( is.na(T2_BSIdep), is.na(T2_BSIanx), is.na(T2_TRIM) ),
@@ -156,10 +155,15 @@ wrangle_post_imputation = function(.dat) {
     expect_equal( .dat$anyNA.T1.primY, mine )
   }
   
-  
   # median-split T1_TrFS for sensitivity analysis
   CC.median = median( d$T1_TrFS, na.rm = TRUE )  # will be fairly close to 0 because standardized
   .dat$T1_high_TrFS = .dat$T1_TrFS > CC.median
+  
+  # pretty treatment variable
+  .dat$treat.pretty = recode( .dat$treat,
+                              `1` = "IT",
+                              `0` = "DT (control)",
+                              .default = "RECODE TROUBLE" )
   
   return(.dat)
 }
