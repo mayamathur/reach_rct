@@ -214,6 +214,8 @@ table1_add_row = function( x, # vector
                            use.spacer.rows = TRUE,
                            print = FALSE ) {
   
+  #if ( var.header == "Gender") browser()
+  
   useNA = ifelse( countNA == TRUE, "ifany", "no" )
   
   if ( type == "cat" ) {
@@ -224,7 +226,12 @@ table1_add_row = function( x, # vector
     row.names = names(t)
     row.names[ is.na(row.names) ] = "Not reported"
     
-    stat.string = paste( t, " (", round( 100 * pt, digits = perc.digits ), "%)", sep = "" )
+    # get rounded percentages, but replace "0%" with "<1%" to avoid confusion
+    #  when the sample size is large
+    pt.rnd = round( 100 * pt, digits = perc.digits )
+    pt.rnd[ pt.rnd == 0] = "<1"
+    
+    stat.string = paste( t, " (", pt.rnd, "%)", sep = "" )
   }
   
   if ( type == "bin01" ) {
@@ -327,8 +334,8 @@ make_table_one = function(.d,
                       countNA = TRUE,
                       .tab1 = t)
   
-  t = table1_add_row( x = .d$isReligious,
-                      var.header = "Is religious",  
+  t = table1_add_row( x = .d$hasReligAffil,
+                      var.header = "Has religious affiliation",  
                       type = "bin01",
                       countNA = TRUE,
                       .tab1 = t)

@@ -22,10 +22,10 @@ source("preliminaries.R")
 
 # Set Parameters Here --------------------------------
 # overwrite old results?
-overwrite.res = FALSE
+overwrite.res = TRUE
 
 # should sanity checks be run?
-run.sanity = FALSE
+run.sanity = TRUE
 
 # use scrambled treatment variable for blinding?
 scramble.treat = FALSE
@@ -34,11 +34,11 @@ scramble.treat = FALSE
 # Read in data  --------------------------------
 setwd(prepped.data.dir)
 d = read_csv("prepped_data.csv") 
-expect_equal( nrow(d), 4571 )  # from 2022-2-1
+expect_equal( nrow(d), 4438 )  # expected n from 2022-3-31
 
 # long dataset
 l = read_csv("prepped_data_long.csv") 
-expect_equal( nrow(l), 4571 * 3 )  # because 3 times/subject
+expect_equal( nrow(l), 4438 * 3 )  # because 3 times/subject
 
 
 # Read in imputations  --------------------------------
@@ -50,7 +50,7 @@ imps <<- lapply( to.read,
 
 
 names(imps[[1]])
-mean( is.na(imps[[1]]$T2_TRIM) )
+expect_equal( 0, mean( is.na(imps[[1]]$T2_TRIM) ) )  # sanity check
 
 # read in long-format imputations for sensitivity analysis
 setwd(imputed.data.dir)
@@ -117,9 +117,36 @@ t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
 
 # look for dimension mismatches caused by missing categories in one treatment group
 dim(t1.treat); dim(t1.cntrl)
-t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
+# t1.treat$Characteristic[ !t1.treat$Characteristic %in% t1.cntrl$Characteristic ]
 
-#@there's a lot of missing data on ethnicity
+
+# manually fix issues in which one table lacks a level
+#  that's present in the other table
+message("\n\nBe careful with this part of code; sensitive to changes in data prep and table layout\n\n")
+#View( cbind(t1.treat$Characteristic, t1.cntrl$Characteristic) )
+
+t1.cntrl = t1.cntrl %>% add_row( .after = 7,
+                                 Characteristic = "Not reported",
+                                 Summary = "0 (0%)" )
+
+t1.treat = t1.treat %>% add_row( .after = 14,
+                                 Characteristic = "Other",
+                                 Summary = "0 (0%)" )
+
+# combine into single table
+t1 = t1.cntrl
+names(t1)[2] = paste( "DT group (control)", "; n=", sum(d$treat == 0), sep="" )
+
+newColName = paste( "IT group", "; n=", sum(d$treat == 1), sep="" )
+t1[[newColName]] = t1.treat$Summary
+
+
+if ( overwrite.res == TRUE ) {
+  setwd(results.dir)
+  setwd("Tables")
+  write.xlsx(t1, "*table_1_manuscript.xlsx", row.names = FALSE)
+}
+
 
 
 # SET 1 GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
