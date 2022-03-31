@@ -243,6 +243,8 @@ for ( .v in c(primYNames, secYNames, unusedYnames) ) {
 summary( lm(T2_TRIM ~ treat, data = d) )
 summary( lm(T2_DTFS ~ treat, data = d) )
 
+
+
 # save intermediate dataset
 write_interm(d, "prepped_data_intermediate1.csv")
 
@@ -254,34 +256,38 @@ write_interm(d, "prepped_data_intermediate1.csv")
 # read in intermediate dataset
 d = read_interm("prepped_data_intermediate1.csv")
 
-
+# recode characters as factors to prevent issues with mice()
+sum(sapply(d, is.character))  # check number of character vars
+d = d %>% mutate_if(sapply(d, is.character), as.factor)
+sum(sapply(d, is.character))  # check again; should be 0
 
 # ~ Look at Missingness --------------------------------------
 
-t = d %>% summarise( across( everything(), ~ round( 100*mean( !is.na(.x) ) ) ) )
-t = as.data.frame( t(t) ) # transpose it
-names(t) = "perc.nonmissing"
 
-t %>% arrange(perc.nonmissing)
-#**save and give to Man Yee
+if ( run.sanity == TRUE ) {
+  t = d %>% summarise( across( everything(), ~ round( 100*mean( !is.na(.x) ) ) ) )
+  t = as.data.frame( t(t) ) # transpose it
+  names(t) = "perc.nonmissing"
+  
+  t %>% arrange(perc.nonmissing)
+  #**save and give to Man Yee
+  
+  setwd(results.dir)
+  setwd("Auxiliary")
+  fwrite(t, "perc_nonmissing_by_var.csv")
+  
+  # a bit slow
+  #missmap(d)
+}
 
-setwd(results.dir)
-setwd("Auxiliary")
-fwrite(t, "perc_nonmissing_by_var.csv")
-
-# a bit slow
-#missmap(d)
 
 
 
 # ~ Make imputations --------------------------------------
 
 
-# NEED TO FIX THIS BECAUSE IMPS HAVE MISSING DATA!
-# NOTE: In git commit history, you'll see there was a time when imputation worked just fine. That was
-#  before I added the variable recodings above.
-
 if ( impute.from.scratch == TRUE ) {
+  
   ini = mice(d, m=1, maxit = 0 )
   
   # check default methods
@@ -320,7 +326,6 @@ if ( impute.from.scratch == TRUE ) {
   myMethod[ !( names(myMethod) %in% varsToImpute ) ] = ""
   myMethod
 
-  
   imps = mice( d,
                m=M,  
                predictorMatrix = myPred,
@@ -329,16 +334,15 @@ if ( impute.from.scratch == TRUE ) {
   
   imps$loggedEvents 
   imps$loggedEvents$dep
-  
-  #bm: now has "constant" for site and gender
+
   # make sure there is no missing data in the imputations
   any.missing = apply( complete(imps,1),
                        2,
                        function(x) any(is.na(x)) ) # should be FALSE
   
   fake = complete(imps,1)
-  table(is.na(fake$T2_TRIM))
-  table(is.na(d$T2_TRIM))
+  table(is.na(fake$T2_TRIM))  # imputed data
+  table(is.na(d$T2_TRIM))  # original data
   
   table(is.na(fake$T2_DTFS))
   table(is.na(d$T2_DTFS))
@@ -370,6 +374,7 @@ if ( impute.from.scratch == TRUE ) {
       
     }  # end "for (i in 1:M)"
   }  # end "if ( overwrite.res == TRUE )"
+  
   
 }  # end "if (impute.from.scratch == TRUE)"
 

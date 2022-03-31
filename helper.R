@@ -6,13 +6,13 @@
 write_interm = function(x, filename){
   setwd(prepped.data.dir)
   #setwd("Intermediate work")
-  write.csv(x, filename)
+  fwrite(x, filename, row.names = FALSE)
 }
 
 read_interm = function(filename){
   setwd(prepped.data.dir)
   #setwd("Intermediate work")
-  read.csv(filename)
+  fread(filename)
 }
 
 # like View(), but opens the extra tab if global var useView = TRUE
@@ -76,19 +76,6 @@ percTRUE_incl_NA = function(x) {
 
 # DATA PREP HELPERS  -----------------------------------------------------------
 
-
-# read/write intermediate work
-write_interm = function(x, filename){
-  setwd(prepped.data.dir)
-  setwd("Intermediate prepped datasets")
-  write.csv(x, filename)
-}
-
-read_interm = function(filename){
-  setwd(prepped.data.dir)
-  setwd("Intermediate prepped datasets")
-  read.csv(filename)
-}
 
 
 
