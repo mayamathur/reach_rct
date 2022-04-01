@@ -464,8 +464,6 @@ for ( .missMethod in missMethodsToRun ) {
 
 # ~ Global test for site heterogeneity --------------------------------------
 
-# get ready to collect the 5 site heterogeneity p-values across outcomes
-pvals = c()
 
 for ( .y in primYNames ) {
   
@@ -497,23 +495,27 @@ for ( .y in primYNames ) {
   coefNames = row.names(mod.int$res.raw)
   keepers = stringsWith( pattern = "treat:", x = coefNames )
   
-  new.pvals = mod.int$res.raw$pval[ coefNames %in% keepers ]
+  pvals = mod.int$res.raw$pval[ coefNames %in% keepers ]
   
-  if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
+  ( pval.site.hetero = p.hmp(pvals, L = length(pvals) ) )
+  # this is supposed to be compared to the Bonferroni threshold
+  
+  update_result_csv(name = paste( "Site heterogeneity global pval", .y, sep = " " ),
+                    value = round(pval.site.hetero, 3) )
+  
+  update_result_csv(name = paste( "Site heterogeneity global pval passed Bonferroni", .y, sep = " " ),
+                    value = pval.site.hetero < 0.005 )
+  
+  #if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
   
   
 }
 
 
-( pval.site.hetero = p.hmp(pvals, L = length(pvals) ) )
-# this is supposed to be compared to the Bonferroni threshold
 
 
-update_result_csv(name = "Site heterogeneity global pval",
-                  value = round(pval.site.hetero, 3) )
 
-update_result_csv(name = "Site heterogeneity global pval passed Bonferroni",
-                  value = pval.site.hetero < 0.005 )
+
 
 
 
