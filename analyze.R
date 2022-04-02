@@ -582,7 +582,6 @@ for ( i in 1:length(primYNames) ) {
   lp = l
   lp$Y = l[[.y]]
   
-  #@later, check with TVW about type of SE to show here
   agg = lp %>% group_by(treat.pretty, wave) %>%
     summarise( Mean = meanNA(Y),
                SE = marginal_hc_se(Y),
@@ -665,7 +664,9 @@ meanNA(d$T1_TRIM[ d$treat == 1] )
 meanNA(d$T2_TRIM[ d$treat == 1] )
 meanNA(d$T3_TRIM[ d$treat == 1] )
 
-
+d %>% select(T1_TRIM, T2_TRIM, T3_TRIM, treat) %>%
+  group_by(treat) %>%
+  summarise_all( function(x) mean(x, na.rm = TRUE))
 
 
 # SENSITIVITY ANALYSES -----------------------------------------------------------
@@ -764,7 +765,8 @@ missMethodsToRun = c("CC", "MI")
 #@ this needs more sanity checks
 for ( .y in primYNames ) {
   
-  .formulaString = paste(.y, " ~ treat.vary + site", sep = "" )
+  #@I THINK THIS IS SUPPOSED TO HAVE FES OF TIME POINT AS WELL?
+  .formulaString = paste(.y, " ~ treat.vary + site + wave", sep = "" )
   
   
   for ( .missMethod in missMethodsToRun ) {
@@ -783,6 +785,7 @@ for ( .y in primYNames ) {
                          yName = .y,
                          formulaString = .formulaString,
                          idString = "as.factor(uid)",
+                         
                          analysisVarNames = c(.y, "treat.vary", "site"),
                          analysisLabel = paste("set5_geelong_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",

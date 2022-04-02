@@ -182,10 +182,10 @@ make_long_dataset = function(.dat) {
   l$treat.vary[ l$wave == "T2" & l$treat == 0 ] = 0
   l$treat.vary[ l$wave == "T2" & l$treat == 1 ] = 1
   l$treat.vary[ l$wave == "T3" ] = 1
-  
-  # sanity check
-  l %>% group_by(wave, treat) %>%
-    summarise( unique(treat.vary) )
+
+  # # sanity check
+  # l %>% group_by(wave, treat) %>%
+  #   summarise( unique(treat.vary) )
   
   l
   
