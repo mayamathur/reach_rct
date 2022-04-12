@@ -149,7 +149,7 @@ if ( overwrite.res == TRUE ) {
 
 
 
-# SET 1 GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
+# SET 1: GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site (Bonferroni for secondaries)
@@ -352,7 +352,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 
 
-# SET 2 GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
+# SET 2: GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
 
 
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
@@ -399,7 +399,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 
 
-# SET 3 GEE MODELS (ANALYZE WITHIN SITE) -----------------------------------------------------------
+# SET 3: GEE MODELS (ANALYZE WITHIN SITE) -----------------------------------------------------------
 
 # Per prereg, we're NOT reporting p-values for individual sites
 # Instead we're doing a single global test
@@ -519,7 +519,7 @@ for ( .y in primYNames ) {
 
 
 
-# SET 4 GEE MODELS (PRECISION COVARIATES) -----------------------------------------------------------
+# SET 4: GEE MODELS (PRECISION COVARIATES) -----------------------------------------------------------
 
 
 # - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
@@ -576,10 +576,13 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 plotList = list()
 
+# prepare to exclude the single Columbia site that didn't collect any data at T3
+t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
+
 for ( i in 1:length(primYNames) ) {
   
   .y = primYNames[i]
-  lp = l
+  lp = l[ l$uid %in% t3.keeper.ids, ]
   lp$Y = l[[.y]]
   
   agg = lp %>% group_by(treat.pretty, wave) %>%
@@ -659,7 +662,7 @@ ggsave( paste("plot_effect_maintenance_all_outcomes.pdf", sep="" ),
 
 
 
-# sanity check
+# sanity checks:
 meanNA(d$T1_TRIM[ d$treat == 1] )
 meanNA(d$T2_TRIM[ d$treat == 1] )
 meanNA(d$T3_TRIM[ d$treat == 1] )
@@ -762,10 +765,19 @@ for ( .y in c(primYNames) ) {
 missMethodsToRun = c("CC", "MI")
 #missMethodsToRun = "CC"
 
+# prepare to exclude the single Columbia site that didn't collect any data at T3
+t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
+
+impsl.t3.filtered = lapply( X = impsl,
+                            FUN = function(.dat) .dat[ .dat$uid %in% t3.keeper.ids, ] )
+
+# sanity check: dim of filtered imputed data should match filtered CC data
+expect_equal( nrow( impsl.t3.filtered[[1]] ),
+              nrow( l[ l$uid %in% t3.keeper.ids, ]) )
+
 #@ this needs more sanity checks
 for ( .y in primYNames ) {
   
-  #@I THINK THIS IS SUPPOSED TO HAVE FES OF TIME POINT AS WELL?
   .formulaString = paste(.y, " ~ treat.vary + site + wave", sep = "" )
   
   
@@ -778,8 +790,8 @@ for ( .y in primYNames ) {
     
     .results.dir = paste( results.dir, "/Analysis set 5/", missingString, sep = "" )
     
-    analyze_one_outcome( dat.cc = l,
-                         dats.imp = impsl,
+    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+                         dats.imp = impsl.t3.filtered,
                          
                          missMethod = .missMethod,
                          yName = .y,

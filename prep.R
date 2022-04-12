@@ -29,15 +29,20 @@ overwrite.prepped.data = TRUE
 run.sanity = FALSE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = TRUE
+impute.from.scratch = FALSE
 # number of imputations
 M = 10
 
 # read in raw data
 setwd(raw.data.dir)
-#d = read_csv("07.02.21_across sites RCT data.csv") 
+
+# # BEFORE adding the site_t3 indicator
+# setwd("2022-3-22")
+# d = read_excel("22-3-22 RCT raw data - updated.xlsx", sheet = 1) 
+# AFTER adding the indicator
 setwd("2022-3-22")
-d = read_excel("22-3-22 RCT raw data - updated.xlsx", sheet = 1) 
+d = read_excel("22-4-1 RCT raw data - updated.xlsx", sheet = 1) 
+
 
 # fix irregular variable names
 # currently coded with a number separating "BSI" from "dep", which will confuse later recoding
@@ -279,7 +284,7 @@ if ( run.sanity == TRUE ) {
 
 # ~ Make imputations --------------------------------------
 
-
+#@2022-4-12: You haven't re-run this after adding the site_t3 var
 if ( impute.from.scratch == TRUE ) {
   
   ini = mice(d, m=1, maxit = 0 )
