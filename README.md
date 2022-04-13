@@ -5,7 +5,7 @@
 
 This repository is for the paper:
 
-> XXX
+> [INSERT CITATION]
 
 This repository contains all data (except participants' counties of residence per our IRB approval), intervention materials, questionnaire materials, and analysis code required to reproduce all results in the paper. All methods and statistical analyses were preregistered in detail (LINKS). The minor deviations from those protocols (i.e., analyses that we omitted given the null results) are disclosed in the main text or Supplement. All measures and experiments are reported, and we determined
 sample sizes in advance. 
@@ -13,17 +13,12 @@ sample sizes in advance.
 
 # Materials
 
-Need to do
-
-
-### Nuances 
+[NEEDS TO BE DONE]
 
 
 # Datasets
 
-For all studies, the prepped datasets are publicly available, but not the raw datasets. This is because the raw datasets contain information about subjects' counties of residence, which is considered identifiable. The data analysis scripts (below) only use the prepped datasets, so analyses can be fully reproduced without access to the raw datasets.
-
-### Nuances  
+The folder `Data` contains versions of the dataset that has been prepped for analysis in R and a more raw version provided by the data management team to the statistical analyst.
 
 
 # Data preparation and analysis code
@@ -32,15 +27,15 @@ We conducted analyses as follows:
 
 1. We ran the code in `prep.R` (which calls `preliminaries.R` and also functions in `helper.R`). The prep script takes the raw datasets and produces the analysis-ready prepped datasets.
 
-2. We ran `analyze.R` to conduct all analyses. This script is organized into analysis "sets", each of which corresponds to one type of model fit to multiple outcomes. The sets are:
+2. We ran `analyze.R` to conduct all analyses. This script is organized into analysis "sets", each of which corresponds to one type of model fit to multiple outcomes. The sets are as follows, with bold text indicating preregistered analyses:
 
-    * Analysis set 1 (preregistered primary analysis): Effect at T2 on primary and secondary outcomes
+    * **Analysis set 1 (preregistered primary analysis)**: Effect at T2 on primary and secondary outcomes
     * Analysis set 1B (post hoc): Effect at T2 on each flourishing domain (complete-case analysis only)
-    * Analysis set 2 (preregistered secondary analysis): Effect modification by baseline trait forgiveness
+    * **Analysis set 2 (preregistered secondary analysis)**: Effect modification by baseline trait forgiveness
     * Analysis set 3 (sanity check for set 6): Effect at T2 on primary and secondary outcomes within each site
-    * Analysis set 6 (preregistered secondary): Global test of site heterogeneity
-    * Analysis set 4 (preregistered secondary): Controlling for precision covariates
-    * Analysis set 5A (preregistered secondary): Analysis including T3; fixed effects of wave 
+    * **Analysis set 6 (preregistered secondary)**: Global test of site heterogeneity
+    * **Analysis set 4 (preregistered secondary)**: Controlling for precision covariates
+    * **Analysis set 5A (preregistered secondary)**: Analysis including T3; fixed effects of wave 
     * Analysis set 5B (post hoc): Analysis including T3; omitting fixed effects of wave 
     * Analysis set 5C (post hoc): Analysis including T3; treat wave as continuous variable
 
@@ -49,7 +44,7 @@ The above numbering of the "analysis sets'' matches that in the R code so that t
 This script writes various kinds of results files, listed below.
 
 
-### Nuances  
+#### Nuances  
 
 * The code files in the `Code (git)` directory are also version-controlled on [Github](https://github.com/mayamathur/ev_rct).
 

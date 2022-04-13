@@ -365,45 +365,33 @@ pre code {
 </div>
 <div id="datasets" class="section level1">
 <h1>Datasets</h1>
-<p>For all studies, the prepped datasets are publicly available, but not the raw datasets. This is because the raw datasets contain information about subjects’ counties of residence, which is considered identifiable. The data analysis scripts (below) only use the prepped datasets, so analyses can be fully reproduced without access to the raw datasets.</p>
-<div id="nuances-1" class="section level3">
-<h3>Nuances</h3>
-</div>
+<p>The folder <code>Data</code> contains versions of the dataset that has been prepped for analysis in R and a more raw version provided by the data management team to the statistical analyst.</p>
 </div>
 <div id="data-preparation-and-analysis-code" class="section level1">
 <h1>Data preparation and analysis code</h1>
 <p>We conducted analyses as follows:</p>
 <ol style="list-style-type: decimal">
 <li><p>We ran the code in <code>prep.R</code> (which calls <code>preliminaries.R</code> and also functions in <code>helper.R</code>). The prep script takes the raw datasets and produces the analysis-ready prepped datasets.</p></li>
-<li><p>We ran <code>analyze.R</code> to conduct all analyses. This script is organized into analysis “sets”, each of which corresponds to one type of model fit to multiple outcomes. The sets are:</p>
+<li><p>We ran <code>analyze.R</code> to conduct all analyses. This script is organized into analysis “sets”, each of which corresponds to one type of model fit to multiple outcomes. The sets are as follows, with bold text indicating preregistered analyses:</p>
 <ul>
-<li>Analysis set 1 (preregistered primary analysis): Effect at T2 on primary and secondary outcomes</li>
+<li><strong>Analysis set 1 (preregistered primary analysis)</strong>: Effect at T2 on primary and secondary outcomes</li>
 <li>Analysis set 1B (post hoc): Effect at T2 on each flourishing domain (complete-case analysis only)</li>
-<li>Analysis set 2 (preregistered secondary analysis): Effect modification by baseline trait forgiveness</li>
+<li><strong>Analysis set 2 (preregistered secondary analysis)</strong>: Effect modification by baseline trait forgiveness</li>
 <li>Analysis set 3 (sanity check for set 6): Effect at T2 on primary and secondary outcomes within each site</li>
-<li>Analysis set 6 (preregistered secondary): Global test of site heterogeneity</li>
-<li>Analysis set 4 (preregistered secondary): Controlling for precision covariates</li>
-<li>Analysis set 5A (preregistered secondary): Analysis including T3; fixed effects of wave</li>
+<li><strong>Analysis set 6 (preregistered secondary)</strong>: Global test of site heterogeneity</li>
+<li><strong>Analysis set 4 (preregistered secondary)</strong>: Controlling for precision covariates</li>
+<li><strong>Analysis set 5A (preregistered secondary)</strong>: Analysis including T3; fixed effects of wave</li>
 <li>Analysis set 5B (post hoc): Analysis including T3; omitting fixed effects of wave</li>
 <li>Analysis set 5C (post hoc): Analysis including T3; treat wave as continuous variable</li>
 </ul></li>
 </ol>
 <p>The above numbering of the &quot;analysis sets’’ matches that in the R code so that the code can be searched easily; that ordering that based on structural rather than conceptual similarity of the analyses. Above, the results are grouped conceptually, so the analysis sets are out of cardinal order.</p>
-<p>This script writes various kinds of results files:</p>
-<div id="nuances-2" class="section level3">
-<h3>Nuances</h3>
+<p>This script writes various kinds of results files, listed below.</p>
+<div id="nuances-1" class="section level4">
+<h4>Nuances</h4>
 <ul>
 <li><p>The code files in the <code>Code (git)</code> directory are also version-controlled on <a href="https://github.com/mayamathur/ev_rct">Github</a>.</p></li>
-<li><p>The code files use the R package <code>renv</code> to snapshot the package environment that we had when we analyzed the data. Instructions for how to restore that environment are at the top of the analysis code files. Alternatively, you can directly look at the contents of <code>renv.lock</code> to see session information details.</p></li>
-<li><p>Sanity checks for data prep and analysis fns are within <code>study1_or_3_data_prep.R</code> and <code>analysis.R</code>; small unit tests are directly in <code>helper_prep.R</code> or <code>helper_analysis.R</code>.</p></li>
-<li><p>The most important helper function, <code>analyze_all_outcomes()</code>, makes a table of treatment effects for the main outcome and all secondary outcome. It accounts for the following differences in analyses across the 3 studies:</p>
-<ul>
-<li>Studies 1 and 2 used marginal randomization, so each outcome is analyzed with a t-test. However, Study 2 used stratified randomization, so each outcome is analyzed with OLS + robust inference, controlling for variable, <code>targetDemographic</code>, used in randomization.</li>
-<li>For Study 3, we analyzed treatment effects on <code>mainY</code> in two ways: first among all subjects, and then only among those with <code>targetDemoSimple = TRUE</code>.</li>
-<li>Study 2 has a single binary outcome, <code>intentionReduce</code>, for which we used a log-linear model (with regular model-based inference) to estimate a risk ratio.</li>
-</ul></li>
-<li><p>The other heavily used helper functions for analyses are <code>my_ttest()</code> and <code>my_ols_hc0()</code>.</p></li>
-<li><p>Some code files internally refer to “W1” and “W2” (Waves 1 and 2), which are synonymous with <span class="math inline">\(T_0\)</span> and <span class="math inline">\(T_1\)</span> in the paper.</p></li>
+<li><p>The code files use the R package <code>renv</code> to snapshot the package environment that we had when we analyzed the data. Instructions for how to restore that environment are at the top of the analysis code files. Alternatively, you can directly look at the contents of <code>renv.lock</code> to see session information details. Also, the output from <code>sessionInfo()</code> is saved in <code>2022-4-13 sessionInfo.txt</code>.</p></li>
 </ul>
 </div>
 </div>

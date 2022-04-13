@@ -1,5 +1,4 @@
 
-
 # GENERIC HELPERS  -----------------------------------------------------------
 
 # read/write intermediate work
@@ -467,7 +466,6 @@ report_gee_table = function(dat,
       lo = est - qnorm(.975) * se
       hi = est + qnorm(.975) * se
       Z = abs( est / se )
-      # @consider using t-dist
       pval = 2 * ( c(1) - pnorm(as.numeric(Z)) )
     }, error = function(err) {
       
@@ -551,7 +549,7 @@ analyze_one_outcome = function( dat.cc = d,
                                 .results.dir = NA) {
   
   
-  # #@TEST ONLY
+  # TEST ONLY
   # missMethod = "MI"
   # yName = primYNames[1]
   # formulaString = "T2_BSI ~ treat + site"
@@ -593,8 +591,6 @@ analyze_one_outcome = function( dat.cc = d,
   
   
   # ~ Pool Imputations if Applicable ------------------------------
-  
-  #@ EDIT MI_POOL_ALL SO THAT IT RECORDS N.ANALYZED
   
   # pool the imputations
   # might have only 1 row if we're doing CC analysis

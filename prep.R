@@ -1,13 +1,4 @@
 
-# NOTES -----------------------------------------------------------
-
-
-# Questions for Man Yee:
-# https://github.com/mayamathur/reach_rct/issues
-
-# - *Prereg has two different lists of secondaries: (TFS, forbearance, DTFS, flourishing index) vs. (EFS, forbearance, DTFS, flourishing)
-
-
 # PRELIMINARIES -----------------------------------------------------------
 
 library(here)

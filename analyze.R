@@ -1,17 +1,4 @@
 
-# NOTES -----------------------------------------------------------
-
-# Models that need to be fit:
-# - GEE of all time points (need data in long format)
-# - Maybe fill in #@ things?
-
-# Game plan:
-# - Fn similar to my_ols_hc0_all, but arg is the entire model formula
-# - Then should be able to modify analyze_all_outcomes to handle MI, etc.
-
-# For read-me:
-
-
 # PRELIMINARIES -----------------------------------------------------------
 
 library(here)
@@ -464,7 +451,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
 
 #@NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
-#  but not site, so should not report the site p-values in this model
+#  but not site, so should NOT report the site p-values in this model
 
 for ( .y in primYNames ) {
   
