@@ -248,8 +248,6 @@ if ( run.sanity == TRUE ) {
   expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
   
   
-  
-  
   # other conceptually similar models:
   # ~~ Model 1: OLS ---------
   ols = lm( T2_TRIM ~ treat + site, data = d )
@@ -503,7 +501,7 @@ for ( .missMethod in missMethodsToRun ) {
 
 
 
-# ~ SET 6: Global test for site heterogeneity --------------------------------------
+# SET 6: Global test for site heterogeneity --------------------------------------
 
 
 for ( .y in primYNames ) {
@@ -512,13 +510,6 @@ for ( .y in primYNames ) {
   .formulaString = paste(.fullYName, " ~ treat*site", sep = "" )
   
   .missMethod = "MI"
-  
-  # for ( .missMethod in missMethodsToRun ) {
-  #   
-  #   cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
-  #   
-  #   if (.missMethod == "MI") missingString = "Multiple imputation"
-  #   if (.missMethod == "CC") missingString = "Complete-case"
   
   .results.dir = paste( results.dir, "/Analysis set 6/", missingString, sep = "" )
   
@@ -546,19 +537,32 @@ for ( .y in primYNames ) {
   
   update_result_csv(name = paste( "Site heterogeneity global pval passed Bonferroni", .y, sep = " " ),
                     value = pval.site.hetero < 0.005 )
-  
-  #if ( .y == primYNames[1] ) pvals = new.pvals else pvals = c(pvals, new.pvals)
-  
-  
+
 }
 
 
 
 
 
+### Sanity check: Reproduce HMP straight from tables
+
+# wondering why HMP is so much smaller for 
+
+# given how similar the sites' estimates are for BSIdep and BSIanx,
+#  is it correct that their HMPs are so different (0.008 vs. 0.26)? 
+
+# for BSIanx
+pvals = c(0.270383, 0.790297, 0.055420, 0.477202, 0.153326)
+p.hmp(pvals, L = length(pvals) )
 
 
+# for BSIdep
+pvals = c(0.2836111, 0.7283142, 0.0016135, 0.6310697, 0.3590222)
+p.hmp(pvals, L = length(pvals) )
 
+# seems like this occurs because of the very small p-value for third site in BSIdep 
+# i.e., driven largely by ineffectiveness in South Africa
+#  corroborated by plot_effect_maintenance_by_site_all_outcomes.pdf
 
 # SET 4: GEE MODELS (PRECISION COVARIATES) -----------------------------------------------------------
 
