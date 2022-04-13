@@ -219,16 +219,38 @@ for ( .y in c(primYNames, secYNames) ) {
 # ~ Sanity checks ------------------------------
 
 if ( run.sanity == TRUE ) {
-  # why are site coefficients so precise?
-  # note that Columbia is reference in coeffs above
-  d %>% group_by(site) %>%
-    summarise( meanNA(T2_TRIM) )
+
   
-  d %>% group_by(treat, site) %>%
-    summarise( meanNA(T2_TRIM) )
+  ### Sanity check: Reproduce one outcome model manually
+  
+  # get previous results for comparison
+  setwd( paste( results.dir, "/Analysis set 1/Complete-case", sep = "" ) )
+  res1 = fread("set1_outcome_ TRIM_completeCase__gee_table_raw_.csv")
+  
+  # refit the model manually
+  mod = gee( T2_TRIM ~ treat + site,
+             id = as.factor(uid),  
+             corstr = "exchangeable",
+             data = d )
+  
+  summ = summary(mod)
+  est = coef(mod)
+  se = summ$coefficients[,"Robust S.E."]
+  lo = coef(mod) - qnorm(.975) * se
+  hi = coef(mod) + qnorm(.975) * se
+  Z = as.numeric( summ$coefficients[,"Robust z"] )
+  pval = 2 * ( c(1) - pnorm(abs(Z)) )
+  
+  expect_equal( res1$est, as.numeric(est), tol = 0.001 )
+  expect_equal( res1$se, as.numeric(se), tol = 0.001 )
+  expect_equal( res1$lo, as.numeric(lo), tol = 0.001 )
+  expect_equal( res1$hi, as.numeric(hi), tol = 0.001 )
+  expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
   
   
   
+  
+  # other conceptually similar models:
   # ~~ Model 1: OLS ---------
   ols = lm( T2_TRIM ~ treat + site, data = d )
   summary(ols)  # model-based SEs (might be wrong)
