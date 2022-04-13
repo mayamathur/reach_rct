@@ -102,9 +102,47 @@ if ( run.sanity == TRUE ) {
   # ~ Site-specific Table 1's with sanity checks -----------------------------------
   
   for ( .s in unique(d$site) ) {
-    t1 = make_table_one(.d = d %>% filter(site == .s),
+    ### Marginally wrt treatment status 
+    t1.all = make_table_one(.d = d %>% filter(site == .s),
                         .include.sanity.checks = TRUE )
+    # for later merging
+    t1.all = t1.all %>% add_column(row = 1:nrow(t1.all), .before = 1 )
+
     
+    ### Stratified by treatment status 
+    d.temp = d %>% filter( site == .s )
+    t1.treat = make_table_one(.d = d.temp %>% filter( treat == 1 ) )
+    t1.cntrl = make_table_one(.d = d.temp %>% filter( treat == 0 ) )
+    
+    t1.treat = t1.treat %>% add_column(row = 1:nrow(t1.treat), .before = 1 )
+    t1.cntrl = t1.cntrl %>% add_column(row = 1:nrow(t1.cntrl), .before = 1 )
+    
+    t1.strat = merge(t1.cntrl, t1.treat, all = TRUE, by = "row")
+   
+    
+    ### Merge and organize the full table (marginal; DT group; IT group)
+    t1 = merge(t1.all,
+                 t1.strat,
+                 all = TRUE, by = "row") %>%
+      select( -c("row") )
+    
+    
+    
+    names(t1)[1] = "Characteristic (overall)"
+    names(t1)[2] = paste( "Both groups", "; n=",
+                          nrow(d.temp),
+                          sep="" )
+    
+    names(t1)[3] = "Characteristic (DT)"
+    names(t1)[4] = paste( "DT group (control)", "; n=",
+                          sum(d.temp$treat == 0),
+                          sep="" )
+    names(t1)[5] = "Characteristic (IT)"
+    names(t1)[6] =paste( "IT group", "; n=",
+                         sum(d.temp$treat == 1),
+                         sep="" )
+    
+
     setwd(results.aux.dir)
     setwd("Marginal and site-specific Table 1's with sanity checks")
     write_csv(t1, paste(.s, "_table1_cc_sanity.csv", sep ="") )
@@ -116,6 +154,8 @@ if ( run.sanity == TRUE ) {
 
 
 # TABLE 1: BASELINE DEMOGRAPHICS -----------------------------------------------------------
+
+# ~ Across all sites ----------------------------------------
 
 # stratify demographics by treatment group
 t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
@@ -152,6 +192,7 @@ if ( overwrite.res == TRUE ) {
   setwd("Tables")
   write.xlsx(t1, "*table_1_manuscript.xlsx", row.names = FALSE)
 }
+
 
 
 
