@@ -390,6 +390,73 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 
 
+# SET 1B: EACH FLOURISHING DOMAIN -------------------------------
+
+
+# caveat: this is a very hacky, quick & dirty analysis 
+
+
+# bring back dataset from before subscales were removed
+# read in intermediate dataset
+# this was written by prep.R
+d.interm = read_interm("prepped_data_intermediate1.csv")
+expect_equal( nrow(d.interm), nrow(d) )
+
+# temporary copy of dataset to which we'll add the flourishing subscales
+d2 = d
+
+keepers = names(d.interm)[ grepl("T2_FS", names(d.interm)) == TRUE ]
+
+d2 = bind_cols( d2, d.interm %>% select( all_of(keepers) ) )
+
+
+# can only do CC here
+missMethodsToRun = "CC"
+
+
+for ( .y in keepers ) {
+  
+  bonferroni.alpha = NA
+  
+  
+  .fullYName = .y
+  .formulaString = paste(.fullYName, " ~ treat + site", sep = "" )
+  
+  
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 1B/", missingString, sep = "" )
+    
+    analyze_one_outcome( dat.cc = d2,
+                         missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         analysisVarNames = c(.fullYName, "treat", "site"),
+                         analysisLabel = paste("set1B_outcome_", .y, sep = " " ),
+                         bonferroni.alpha = bonferroni.alpha,
+                         corstr = "exchangeable",
+                         .results.dir = .results.dir )
+    
+    
+  }
+}
+
+
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 1B/Complete-case",
+                                         sep = "/" ),
+                   .filename = "table_set1B_posthoc.xlsx",
+                   .var.name = "treat")
+
+
+
 
 # SET 2: GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
 
@@ -460,11 +527,10 @@ for ( .missMethod in missMethodsToRun ) {
     .formulaString = paste("T2_", .y, " ~ treat", sep = "" )
     
     
-    
     for (.site in unique(d$site) ) {
       
-      # * if you want to save site-by-site results automatically as well, just change .results.dir
-      #  arg below
+      # * if you want to save site-by-site results automatically as well,
+      #  just change .results.dir arg below
       site.res = analyze_one_outcome( 
         missMethod = .missMethod,
         yName = .y,
@@ -554,7 +620,6 @@ for ( .y in primYNames ) {
 # for BSIanx
 pvals = c(0.270383, 0.790297, 0.055420, 0.477202, 0.153326)
 p.hmp(pvals, L = length(pvals) )
-
 
 # for BSIdep
 pvals = c(0.2836111, 0.7283142, 0.0016135, 0.6310697, 0.3590222)

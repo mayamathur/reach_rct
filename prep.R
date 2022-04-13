@@ -200,11 +200,17 @@ d = d %>% select( -c(T1_DATE,
 
 d = d %>% filter(age >= 18)
 
+# save intermediate dataset
+write_interm(d, "prepped_data_intermediate1.csv")
+
 
 # RECODE SCALES -----------------------------------------------------------
 
 # scale: part of scale string that appears in each subscale's variable name (e.g., "spec" for speciesism); also becomes the name of the new composite variable
 # revCode: quoted names of any subscales that need to be reverse-coded
+
+# read in intermediate dataset
+d = read_interm("prepped_data_intermediate1.csv")
 
 
 for ( .v in c(primYNames, secYNames, unusedYnames) ) {
@@ -248,7 +254,7 @@ summary( lm(T2_DTFS ~ treat, data = d) )
 
 
 # save intermediate dataset
-write_interm(d, "prepped_data_intermediate1.csv")
+write_interm(d, "prepped_data_intermediate2.csv")
 
 
 
@@ -256,7 +262,7 @@ write_interm(d, "prepped_data_intermediate1.csv")
 # IMPUTATION IN WIDE FORMAT -----------------------------------------------------------
 
 # read in intermediate dataset
-d = read_interm("prepped_data_intermediate1.csv")
+d = read_interm("prepped_data_intermediate2.csv")
 
 # recode characters as factors to prevent issues with mice()
 sum(sapply(d, is.character))  # check number of character vars
@@ -399,7 +405,7 @@ if ( impute.from.scratch == FALSE ) {
 
 
 # read in intermediate dataset
-d = read_interm("prepped_data_intermediate1.csv")
+d = read_interm("prepped_data_intermediate2.csv")
 
 
 d = wrangle_post_imputation(.dat = d)
