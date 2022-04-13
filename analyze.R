@@ -80,6 +80,9 @@ if ( scramble.treat == TRUE ) {
 # Filtered datasets for figs and analyses wrt T3 ----------------------------------
 
 # prepare to exclude the single Columbia site that didn't collect any data at T3
+# as well as Ukraine-Realis for same reason
+
+
 t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
 
 
@@ -92,6 +95,7 @@ impsl.t3.filtered = lapply( X = impsl,
 expect_equal( nrow( impsl.t3.filtered[[1]] ),
               nrow( l[ l$uid %in% t3.keeper.ids, ]) )
 
+table(l.t3.filtered$site)
 
 
 
@@ -591,8 +595,6 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 plotList = list()
 
-# prepare to exclude the single Columbia site that didn't collect any data at T3
-t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
 
 for ( i in 1:length(primYNames) ) {
   
@@ -653,7 +655,7 @@ for ( i in 1:length(primYNames) ) {
   
   plotList[[i]] = p
   
-  
+
   setwd(results.dir)
   setwd("Figures")
   ggsave( paste("plot_effect_maintenance_outcome_", .y, ".pdf", sep="" ),
@@ -685,6 +687,76 @@ meanNA(d$T3_TRIM[ d$treat == 1] )
 d %>% select(T1_TRIM, T2_TRIM, T3_TRIM, treat) %>%
   group_by(treat) %>%
   summarise_all( function(x) mean(x, na.rm = TRUE))
+
+
+
+# ~ Sanity check: Same plot but facetted by site ----------------------------
+
+
+plotList = list()
+
+
+for ( i in 1:length(primYNames) ) {
+  
+  .y = primYNames[i]
+  lp = l.t3.filtered
+  lp$Y = lp[[.y]]
+  
+  agg2 = lp %>% group_by(site, treat.pretty, wave) %>%
+    summarise( Mean = meanNA(Y),
+               SE = marginal_hc_se(Y),
+               # sanity check:
+               SE.plain = sd(Y, na.rm = TRUE) / sqrt( length(Y[!is.na(Y)] ) ) )
+  
+  # get pretty Y label
+  if (.y == "TRIM") .ylab = "TRIM"
+  if (.y == "BSIanx") .ylab = "Anxiety"
+  if (.y == "BSIdep") .ylab = "Depression"
+  
+  # make the plot
+  p <<- ggplot( data = agg2,
+                aes( x = wave, 
+                     y = Mean,
+                     color = treat.pretty ) ) +
+    
+    geom_hline( yintercept = 0,
+                lty = 2,
+                color = "gray") +
+    
+    geom_point(size = 1.2) + 
+    geom_line( aes(group = treat.pretty) ) +
+    geom_errorbar( aes(ymin = Mean - SE,
+                       ymax = Mean + SE),
+                   width = 0 ) +
+    
+    scale_y_continuous( limits = c(-0.7, 1.1),
+                        breaks = round( seq(-0.7, 1.1, 0.2), 2) ) +
+    scale_color_manual( values = c("black", "orange" ) ) +
+    labs(color='Group')  +
+    
+    ylab(.ylab) +
+    xlab("Time point") +
+    
+    theme_bw() +
+    theme(legend.position = "none") +
+    facet_wrap(~site)
+  
+  plotList[[i]] = p
+  
+} # end loop over.y
+
+
+# plotList[[2]]
+# plotList[[3]]
+
+# optional: 
+setwd(results.dir)
+setwd("Figures")
+pCombined = cowplot::plot_grid(plotlist = plotList,
+                               nrow = 3)
+ggsave( paste("plot_effect_maintenance_by_site_all_outcomes.pdf", sep="" ),
+        width = 8,
+        height = 12)
 
 
 # SENSITIVITY ANALYSES -----------------------------------------------------------
@@ -780,10 +852,7 @@ for ( .y in c(primYNames) ) {
 # As sanity check, can compare these to plot_effect_maintenance.pdf
 
 missMethodsToRun = c("CC", "MI")
-#missMethodsToRun = "CC"
 
-
-#@ this needs more sanity checks
 for ( .y in primYNames ) {
   
   .formulaString = paste(.y, " ~ treat.vary + site + wave", sep = "" )
@@ -823,9 +892,32 @@ table_all_outcomes(.results.dir = paste( results.dir,
                    .var.name = "treat.vary")
 
 
+### Sanity check: Reproduce one outcome model manually
+
+# get previous results for comparison
+setwd( paste( results.dir, "/Analysis set 5/Set 5A (prereg)/Complete-case", sep = "" ) )
+res1 = fread("set5A_geelong_outcome_ TRIM_completeCase__gee_table_raw_.csv")
 
 
+# refit the model manually
+mod = gee( TRIM ~ treat.vary + site + wave,
+     id = as.factor(uid),  
+     corstr = "exchangeable",
+     data = l.t3.filtered )
 
+summ = summary(mod)
+est = coef(mod)
+se = summ$coefficients[,"Robust S.E."]
+lo = coef(mod) - qnorm(.975) * se
+hi = coef(mod) + qnorm(.975) * se
+Z = as.numeric( summ$coefficients[,"Robust z"] )
+pval = 2 * ( c(1) - pnorm(abs(Z)) )
+
+expect_equal( res1$est, as.numeric(est), tol = 0.001 )
+expect_equal( res1$se, as.numeric(se), tol = 0.001 )
+expect_equal( res1$lo, as.numeric(lo), tol = 0.001 )
+expect_equal( res1$hi, as.numeric(hi), tol = 0.001 )
+expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
 
 
 # ~~ SET 5B: Omit FEs by site (post hoc) ------------------

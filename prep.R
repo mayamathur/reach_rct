@@ -43,6 +43,9 @@ setwd(raw.data.dir)
 setwd("2022-3-22")
 d = read_excel("22-4-1 RCT raw data - updated.xlsx", sheet = 1) 
 
+# fix site_t3 variable because we also need to exclude Ukraine-Realis
+#  since it didn't collect any data at T3
+d$site_t3[ d$site == "Ukraine (Realis)" ] = "no"
 
 # fix irregular variable names
 # currently coded with a number separating "BSI" from "dep", which will confuse later recoding

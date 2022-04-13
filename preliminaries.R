@@ -54,7 +54,7 @@ results.dir = str_replace_all( string = here(),
 results.aux.dir = paste(results.dir, "/Auxiliary", sep="")
 
 
-overleaf.dir = "/Users/mmathur/Dropbox/Apps/Overleaf/REACH results and preregistration/R_objects"
+overleaf.dir = "/Users/mmathur/Dropbox/Apps/Overleaf/REACH results and preregistration (Overleaf)/R_objects"
 
 
 code.dir = here()
