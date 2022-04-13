@@ -462,7 +462,7 @@ for ( .missMethod in missMethodsToRun ) {
 
 
 
-# ~ Global test for site heterogeneity --------------------------------------
+# ~ SET 6: Global test for site heterogeneity --------------------------------------
 
 
 for ( .y in primYNames ) {
@@ -583,7 +583,7 @@ for ( i in 1:length(primYNames) ) {
   
   .y = primYNames[i]
   lp = l[ l$uid %in% t3.keeper.ids, ]
-  lp$Y = l[[.y]]
+  lp$Y = lp[[.y]]
   
   agg = lp %>% group_by(treat.pretty, wave) %>%
     summarise( Mean = meanNA(Y),
@@ -760,6 +760,8 @@ for ( .y in c(primYNames) ) {
 # ~ SET 5: GEE with all time points --------------------------------
 
 
+# ~~ SET 5A: Main effect of treat.vary; FEs by site (prereg) ------------------
+
 # As sanity check, can compare these to plot_effect_maintenance.pdf
 
 missMethodsToRun = c("CC", "MI")
@@ -788,7 +790,7 @@ for ( .y in primYNames ) {
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
-    .results.dir = paste( results.dir, "/Analysis set 5/", missingString, sep = "" )
+    .results.dir = paste( results.dir, "/Analysis set 5/Set 5A (prereg)/", missingString, sep = "" )
     
     analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
                          dats.imp = impsl.t3.filtered,
@@ -799,22 +801,116 @@ for ( .y in primYNames ) {
                          idString = "as.factor(uid)",
                          
                          analysisVarNames = c(.y, "treat.vary", "site"),
-                         analysisLabel = paste("set5_geelong_outcome_", .y, sep = " " ),
+                         analysisLabel = paste("set5A_geelong_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
-    
     
   }
 }
 
 
-# ~ Single table with all outcomes ---------------------------
-
+# single table with all outcomes
 table_all_outcomes(.results.dir = paste( results.dir,
-                                         "Analysis set 5/Multiple imputation",
+                                         "Analysis set 5/Set 5A (prereg)/Multiple imputation",
                                          sep = "/" ),
-                   .filename = "*table_set5_manuscript.xlsx",
+                   .filename = "*table_set5A_manuscript.xlsx",
                    .var.name = "treat.vary")
+
+
+
+
+
+
+
+# ~~ SET 5B: Omit FEs by site (post hoc) ------------------
+
+missMethodsToRun = c("CC", "MI")
+
+for ( .y in primYNames ) {
+  
+  .formulaString = paste(.y, " ~ treat.vary + site", sep = "" )
+  
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 5/Set 5B (omit FEs)/", missingString, sep = "" )
+    
+    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+                         dats.imp = impsl.t3.filtered,
+                         
+                         missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         
+                         analysisVarNames = c(.y, "treat.vary"),
+                         analysisLabel = paste("set5B_geelong_outcome_", .y, sep = " " ),
+                         corstr = "exchangeable",
+                         .results.dir = .results.dir )
+    
+  }
+}
+
+
+# single table with all outcomes
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 5/Set 5B (omit FEs)/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "table_set5B_posthoc.xlsx",
+                   .var.name = "treat.vary")
+
+
+
+
+
+# ~~ SET 5C: Linear time trend (post hoc) ------------------
+
+missMethodsToRun = c("CC", "MI")
+
+for ( .y in primYNames ) {
+  
+  .formulaString = paste(.y, " ~ treat.vary + site", sep = "" )
+  
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 5/Set 5B (omit FEs)/", missingString, sep = "" )
+    
+    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+                         dats.imp = impsl.t3.filtered,
+                         
+                         missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         
+                         analysisVarNames = c(.y, "treat.vary"),
+                         analysisLabel = paste("set5B_geelong_outcome_", .y, sep = " " ),
+                         corstr = "exchangeable",
+                         .results.dir = .results.dir )
+    
+  }
+}
+
+
+# single table with all outcomes
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 5/Set 5B (omit FEs)/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "table_set5B_posthoc.xlsx",
+                   .var.name = "treat.vary")
+
+
 
 
 

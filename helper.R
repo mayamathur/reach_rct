@@ -182,6 +182,13 @@ make_long_dataset = function(.dat) {
   l$treat.vary[ l$wave == "T2" & l$treat == 0 ] = 0
   l$treat.vary[ l$wave == "T2" & l$treat == 1 ] = 1
   l$treat.vary[ l$wave == "T3" ] = 1
+  
+  # continuous version of time variable for post hoc analysis
+  l$wave.cont = NA
+  l$wave.cont[ l$wave == "T1" ] = 1
+  l$wave.cont[ l$wave == "T2" ] = 2
+  l$wave.cont[ l$wave == "T3" ] = 3
+  
 
   # # sanity check
   # l %>% group_by(wave, treat) %>%
