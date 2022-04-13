@@ -727,6 +727,8 @@ for ( i in 1:length(primYNames) ) {
                # sanity check:
                SE.plain = sd(Y, na.rm = TRUE) / sqrt( length(Y[!is.na(Y)] ) ) )
   
+  # for choosing axis limits
+  # sort(agg$Mean)
   # sanity check: should be very similar
   #abs( agg$SE - agg$SE.plain )
   
@@ -763,7 +765,7 @@ for ( i in 1:length(primYNames) ) {
                    width = 0 ) +
     
     scale_y_continuous( limits = c(-0.35, 0.35),
-                        breaks = round( seq(-0.3, 0.3, 0.1), 2) ) +
+                        breaks = round( seq(-0.35, 0.35, 0.1), 2) ) +
     scale_color_manual( values = c("black", "orange" ) ) +
     labs(color='Group')  +
     
@@ -777,6 +779,11 @@ for ( i in 1:length(primYNames) ) {
 
   setwd(results.dir)
   setwd("Figures")
+  ggsave( paste("plot_effect_maintenance_outcome_", .y, ".pdf", sep="" ),
+          width = 6,
+          height = 4)
+  
+  setwd(overleaf.dir)
   ggsave( paste("plot_effect_maintenance_outcome_", .y, ".pdf", sep="" ),
           width = 6,
           height = 4)
@@ -889,11 +896,11 @@ ggsave( paste("plot_effect_maintenance_by_site_all_outcomes.pdf", sep="" ),
 # repeated measures structure won't fit
 # "Error model is singular"
 summary( aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
-              data = l ) )
+              data = l.t3.filtered ) )
 
 # this does work
-full = aov( TRIM ~ treat * wave, data = l )
-small = aov( TRIM ~ 1, data = l )
+full = aov( TRIM ~ treat * wave, data = l.t3.filtered )
+small = aov( TRIM ~ 1, data = l.t3.filtered )
 
 # "global" p-value for ANOVA model
 # this will capture secular trends as well since null model is intercept-only
@@ -915,8 +922,8 @@ for ( .y in c(primYNames) ) {
   cat( paste("\n\n**********Starting outcome", .y ) )
   
   # this does work
-  full = aov( eval( parse( text = .formulaStringFull ) ), data = l )
-  small = aov( eval( parse( text = .formulaStringSmall ) ), data = l )
+  full = aov( eval( parse( text = .formulaStringFull ) ), data = l.t3.filtered )
+  small = aov( eval( parse( text = .formulaStringSmall ) ), data = l.t3.filtered )
   
   # "global" p-value for ANOVA model
   # this will capture secular trends as well since null model is intercept-only

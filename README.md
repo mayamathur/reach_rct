@@ -1,6 +1,5 @@
 
 
-
 # Overview
 
 This repository is for the paper:
@@ -46,7 +45,7 @@ This script writes various kinds of results files, listed below.
 
 #### Nuances  
 
-* The code files in the `Code (git)` directory are also version-controlled on [Github](https://github.com/mayamathur/ev_rct).
+* The code files in the `Code (git)` directory are also version-controlled on [Github](https://github.com/mayamathur/reach_rct).
 
 * The code files use the R package `renv` to snapshot the package environment that we had when we analyzed the data. Instructions for how to restore that environment are at the top of the analysis code files. Alternatively, you can directly look at the contents of `renv.lock` to see session information details. Also, the output from `sessionInfo()` is saved in `2022-4-13 sessionInfo.txt`.
 
