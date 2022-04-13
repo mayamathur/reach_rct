@@ -2,6 +2,13 @@
 
 # PACKAGES  -----------------------------------------------------------
 
+
+# restore the environment and package versions that were used at the time of analysis
+
+library(renv)
+setwd(here())
+
+# package list saved here in case you want to use current versions instead:
 library(dplyr)
 library(mice)
 library(readr)
@@ -23,6 +30,15 @@ library(sandwich)
 library(harmonicmeanp)
 library(readxl)
 library(xlsx)
+
+
+# from restore() docs:
+# "When renv::restore() is called, packages from the lockfile are compared against packages currently installed in the library paths specified by library. Any packages which have changed will then be installed into the default library. If clean = TRUE, then packages that exist within the default library, but aren't recorded in the lockfile, will be removed as well."
+restore()
+# only if you want to update the renv file:
+# snapshot()
+
+
 
 options(scipen = 999)
 

@@ -46,16 +46,14 @@ We conducted analyses as follows:
 
 The above numbering of the "analysis sets'' matches that in the R code so that the code can be searched easily; that ordering that based on structural rather than conceptual similarity of the analyses. Above, the results are grouped conceptually, so the analysis sets are out of cardinal order.
 
-
-
-This script writes various kinds of results files:
+This script writes various kinds of results files, listed below.
 
 
 ### Nuances  
 
 * The code files in the `Code (git)` directory are also version-controlled on [Github](https://github.com/mayamathur/ev_rct).
 
-* The code files use the R package `renv` to snapshot the package environment that we had when we analyzed the data. Instructions for how to restore that environment are at the top of the analysis code files. Alternatively, you can directly look at the contents of `renv.lock` to see session information details. 
+* The code files use the R package `renv` to snapshot the package environment that we had when we analyzed the data. Instructions for how to restore that environment are at the top of the analysis code files. Alternatively, you can directly look at the contents of `renv.lock` to see session information details. Also, the output from `sessionInfo()` is saved in `2022-4-13 sessionInfo.txt`.
 
 
 # Results files
