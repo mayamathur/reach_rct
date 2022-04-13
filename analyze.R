@@ -77,6 +77,21 @@ if ( scramble.treat == TRUE ) {
 }
 
 
+# Filtered datasets for figs and analyses wrt T3 ----------------------------------
+
+# prepare to exclude the single Columbia site that didn't collect any data at T3
+t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
+
+
+l.t3.filtered = l[ l$uid %in% t3.keeper.ids, ]
+
+impsl.t3.filtered = lapply( X = impsl,
+                            FUN = function(.dat) .dat[ .dat$uid %in% t3.keeper.ids, ] )
+
+# sanity check: dim of filtered imputed data should match filtered CC data
+expect_equal( nrow( impsl.t3.filtered[[1]] ),
+              nrow( l[ l$uid %in% t3.keeper.ids, ]) )
+
 
 
 
@@ -582,7 +597,7 @@ t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
 for ( i in 1:length(primYNames) ) {
   
   .y = primYNames[i]
-  lp = l[ l$uid %in% t3.keeper.ids, ]
+  lp = l.t3.filtered
   lp$Y = lp[[.y]]
   
   agg = lp %>% group_by(treat.pretty, wave) %>%
@@ -767,15 +782,6 @@ for ( .y in c(primYNames) ) {
 missMethodsToRun = c("CC", "MI")
 #missMethodsToRun = "CC"
 
-# prepare to exclude the single Columbia site that didn't collect any data at T3
-t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
-
-impsl.t3.filtered = lapply( X = impsl,
-                            FUN = function(.dat) .dat[ .dat$uid %in% t3.keeper.ids, ] )
-
-# sanity check: dim of filtered imputed data should match filtered CC data
-expect_equal( nrow( impsl.t3.filtered[[1]] ),
-              nrow( l[ l$uid %in% t3.keeper.ids, ]) )
 
 #@ this needs more sanity checks
 for ( .y in primYNames ) {
@@ -792,7 +798,7 @@ for ( .y in primYNames ) {
     
     .results.dir = paste( results.dir, "/Analysis set 5/Set 5A (prereg)/", missingString, sep = "" )
     
-    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+    analyze_one_outcome( dat.cc = l.t3.filtered,
                          dats.imp = impsl.t3.filtered,
                          
                          missMethod = .missMethod,
@@ -840,7 +846,7 @@ for ( .y in primYNames ) {
     
     .results.dir = paste( results.dir, "/Analysis set 5/Set 5B (omit FEs)/", missingString, sep = "" )
     
-    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+    analyze_one_outcome( dat.cc = l.t3.filtered,
                          dats.imp = impsl.t3.filtered,
                          
                          missMethod = .missMethod,
@@ -874,7 +880,7 @@ missMethodsToRun = c("CC", "MI")
 
 for ( .y in primYNames ) {
   
-  .formulaString = paste(.y, " ~ treat.vary + site", sep = "" )
+  .formulaString = paste(.y, " ~ treat.vary + site + wave.cont", sep = "" )
   
   
   for ( .missMethod in missMethodsToRun ) {
@@ -884,9 +890,9 @@ for ( .y in primYNames ) {
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
-    .results.dir = paste( results.dir, "/Analysis set 5/Set 5B (omit FEs)/", missingString, sep = "" )
+    .results.dir = paste( results.dir, "/Analysis set 5/Set 5C (linear time)/", missingString, sep = "" )
     
-    analyze_one_outcome( dat.cc = l[ l$uid %in% t3.keeper.ids, ],
+    analyze_one_outcome( dat.cc = l.t3.filtered,
                          dats.imp = impsl.t3.filtered,
                          
                          missMethod = .missMethod,
@@ -895,7 +901,7 @@ for ( .y in primYNames ) {
                          idString = "as.factor(uid)",
                          
                          analysisVarNames = c(.y, "treat.vary"),
-                         analysisLabel = paste("set5B_geelong_outcome_", .y, sep = " " ),
+                         analysisLabel = paste("set5C_geelong_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          .results.dir = .results.dir )
     
@@ -905,9 +911,9 @@ for ( .y in primYNames ) {
 
 # single table with all outcomes
 table_all_outcomes(.results.dir = paste( results.dir,
-                                         "Analysis set 5/Set 5B (omit FEs)/Multiple imputation",
+                                         "Analysis set 5/Set 5C (linear time)/Multiple imputation",
                                          sep = "/" ),
-                   .filename = "table_set5B_posthoc.xlsx",
+                   .filename = "table_set5C_posthoc.xlsx",
                    .var.name = "treat.vary")
 
 
