@@ -386,22 +386,6 @@ if ( run.sanity == TRUE ) {
   # **Now naive and robust still match!
   # This experiment suggests that the problem is having site as fixed effect
   #  AND as clustering variable (not having too few clusters).
-  
-  # ~~ Conclusions of sanity checks ---------
-  
-  # The culprit is the robust SEs in GEE (not the naive ones), and only when the 
-  #  working correlation structure uses id = site rather than id = uid.
-  
-  # on having both fixed and REs for same variable:
-  # https://stats.stackexchange.com/questions/263194/does-it-make-sense-to-include-a-factor-as-both-fixed-and-random-factor-in-a-line
-  
-  # rationale in slide deck:
-  # Parzen et al. (1998). Does clustering affect the usual test statistics of no treatment effect in a randomized clinical trial?
-  # 
-  # The point of the GEE model here is to flexibly account for correlated observations between and possibly also within sites.
-  # Also, nonnormal outcomes
-  
-  
 }
 
 
@@ -640,12 +624,11 @@ for ( .y in primYNames ) {
 
 ### Sanity check: Reproduce HMP straight from tables
 
-# wondering why HMP is so much smaller for 
-
 # given how similar the sites' estimates are for BSIdep and BSIanx,
 #  is it correct that their HMPs are so different (0.008 vs. 0.26)? 
 
-# for BSIanx
+if ( run.sanity == TRUE ) {
+  # for BSIanx
 pvals = c(0.270383, 0.790297, 0.055420, 0.477202, 0.153326)
 p.hmp(pvals, L = length(pvals) )
 
@@ -656,13 +639,12 @@ p.hmp(pvals, L = length(pvals) )
 # seems like this occurs because of the very small p-value for third site in BSIdep 
 # i.e., driven largely by ineffectiveness in South Africa
 #  corroborated by plot_effect_maintenance_by_site_all_outcomes.pdf
+}
+
 
 # SET 4: GEE MODELS (PRECISION COVARIATES) -----------------------------------------------------------
 
-
-# - GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
-
-#missMethodsToRun = "CC"
+# GEE of primary and secondary Y's ~ treat + site + age + sex + all baseline primY
 
 for ( .y in c(primYNames, secYNames) ) {
   
@@ -1020,6 +1002,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 ### Sanity check: Reproduce one outcome model manually
 
+if ( run.sanity == TRUE ) {
 # get previous results for comparison
 setwd( paste( results.dir, "/Analysis set 5/Set 5A (prereg)/Complete-case", sep = "" ) )
 res1 = fread("set5A_geelong_outcome_ TRIM_completeCase__gee_table_raw_.csv")
@@ -1044,7 +1027,7 @@ expect_equal( res1$se, as.numeric(se), tol = 0.001 )
 expect_equal( res1$lo, as.numeric(lo), tol = 0.001 )
 expect_equal( res1$hi, as.numeric(hi), tol = 0.001 )
 expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
-
+}
 
 # ~~ SET 5B: Omit FEs by site (post hoc) ------------------
 
