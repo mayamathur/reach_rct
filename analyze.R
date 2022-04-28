@@ -276,21 +276,23 @@ if ( run.sanity == TRUE ) {
   expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
   
   
-  # other conceptually similar models:
-  # ~~ Model 1: OLS ---------
+  # other conceptually similar models
+  # these are here primarily to look at the effect of having both fixed effects
+  #  and clustering by site on SEs
+  ### Model 1: OLS
   ols = lm( T2_TRIM ~ treat + site, data = d )
   summary(ols)  # model-based SEs (might be wrong)
   # example: SE for South Africa  = 0.04 (similar for other sites)
   # for treat: 0.03
   
-  # ~~ Model 2: OLS-HC0 ---------
+  ### Model 2: OLS-HC0
   # now with HC0 SEs
   res = my_ols_hc_all( dat = d, ols = ols, yName = "treat", hc.type = "HC0" )
   # **SE for South Africa nearly the same
   # for treat: 0.04
   
   
-  # ~~ Model 2b: OLS-HC1 ---------
+  ### Model 2b: OLS-HC1
   # this is better in finite samples
   # https://economics.mit.edu/files/7422
   
@@ -298,9 +300,7 @@ if ( run.sanity == TRUE ) {
   # SE for South Africa nearly the same
   # for treat: 0.03
   
-  
-  
-  # ~~ Model 3a: LMM with fixed AND random effects of site ---------
+  ### Model 3a: LMM with fixed AND random effects of site
   # also try LMM
   library(lme4)
   
@@ -321,7 +321,7 @@ if ( run.sanity == TRUE ) {
   # **Empirical Bayes SE for South Africa: 0.03
   
   
-  # ~~ Model 3b: LMM with random effects of site (but not fixed effects) ---------
+  ### Model 3b: LMM with random effects of site (but not fixed effects)
   # also try LMM
   library(lme4)
   
@@ -330,7 +330,7 @@ if ( run.sanity == TRUE ) {
   
   summary(lmm)
   # **SE for treat: 0.03
-  # issue with LMM: non-normal outcomes
+  # potential problem for LMM: non-normal outcomes
   
   # get inference for site effects using empirical Bayes
   # LMM without FEs of site; inference from empirical Bayes
@@ -341,7 +341,7 @@ if ( run.sanity == TRUE ) {
   
   #**Empirical Bayes SE for South Africa: 0.03
   
-  # ~~ Model 4: GEE (prespecified) ---------
+  ### Model 4: GEE (prespecified) ---------
   
   mod4 = gee( T2_TRIM ~ treat + site,
               id = as.factor(site),  
@@ -351,12 +351,12 @@ if ( run.sanity == TRUE ) {
   summ4 = summary(mod4)
   summ4$coefficients
   
-  # **Naive SE (South Africa, treat): (0.04, 0.03)
-  # **Robust SE: (0.0008, 0.07)
+  # Naive SE (South Africa, treat): (0.04, 0.03)
+  # Robust SE: (0.0008, 0.07)
   
   
   
-  # ~~ Model 4b: GEE with clustering by uid instead of site ---------
+  ### Model 4b: GEE with clustering by uid instead of site
   
   mod4b = gee( T2_TRIM ~ treat + site,
                id = as.factor(uid),  
@@ -366,13 +366,11 @@ if ( run.sanity == TRUE ) {
   summ4b = summary(mod4b)
   summ4b$coefficients
   
-  # **Naive SE (South Africa, treat): (0.04, 0.03)
-  # **Robust SE: (0.04, 0.03)
+  # Naive SE (South Africa, treat): (0.04, 0.03)
+  # Robust SE: (0.04, 0.03)
+  # Now they agree almost exactly
   
-  # Now they agree almost exactly!!!
-  
-  # ~~ Model 4c: GEE with fake site variable ---------
-  
+  ### Model 4c: GEE with fake site variable
   d$fake.cluster = sample( 1:6, replace = TRUE, size = nrow(d) )
   
   mod4c = gee( T2_TRIM ~ treat + site,
@@ -384,7 +382,7 @@ if ( run.sanity == TRUE ) {
   summ4c$coefficients
   
   # **Now naive and robust still match!
-  # This experiment suggests that the problem is having site as fixed effect
+  # This experiment suggests that it's a problem to have site as fixed effect
   #  AND as clustering variable (not having too few clusters).
 }
 
@@ -506,6 +504,35 @@ for ( .y in primYNames ) {
 }
 
 
+### Sanity check: Reproduce one outcome model manually
+if ( run.sanity == TRUE ) {
+  # get previous results for comparison
+  setwd( paste( results.dir, "/Analysis set 2/Complete-case", sep = "" ) )
+  res1 = fread("set2_outcome_ TRIM_completeCase__gee_table_raw_.csv")
+  
+  
+  # refit the model manually
+  mod = gee( T2_TRIM ~ treat*T1_high_TrFS + site,
+             id = as.factor(uid),  
+             corstr = "exchangeable",
+             data = d )
+  
+  summ = summary(mod)
+  est = coef(mod)
+  se = summ$coefficients[,"Robust S.E."]
+  lo = coef(mod) - qnorm(.975) * se
+  hi = coef(mod) + qnorm(.975) * se
+  Z = as.numeric( summ$coefficients[,"Robust z"] )
+  pval = 2 * ( c(1) - pnorm(abs(Z)) )
+  
+  expect_equal( res1$est, as.numeric(est), tol = 0.001 )
+  expect_equal( res1$se, as.numeric(se), tol = 0.001 )
+  expect_equal( res1$lo, as.numeric(lo), tol = 0.001 )
+  expect_equal( res1$hi, as.numeric(hi), tol = 0.001 )
+  expect_equal( res1$pval, as.numeric(pval), tol = 0.001 )
+}
+
+
 
 # ~ Single table with all outcomes ---------------------------
 
@@ -578,6 +605,40 @@ for ( .missMethod in missMethodsToRun ) {
 }  # end loop over missMethod
 
 
+### Sanity check: Reproduce one outcome model manually
+if ( run.sanity == TRUE ) {
+  # get previous results for comparison
+  setwd( paste( results.dir, "/Analysis set 3/Complete-case", sep = "" ) )
+  res1 = fread("set3_TRIM_Complete-case_gee_table_raw_.csv")
+  
+  
+  # refit the model manually
+  .site = "South Africa"
+  res1 = res1 %>% filter(site == .site)
+  
+  mod = gee( T2_TRIM ~ treat,
+             id = as.factor(uid),  
+             corstr = "exchangeable",
+             data = d[ d$site == .site, ] )
+  
+  summ = summary(mod)
+  est = coef(mod)
+  se = summ$coefficients[,"Robust S.E."]
+  lo = coef(mod) - qnorm(.975) * se
+  hi = coef(mod) + qnorm(.975) * se
+  Z = as.numeric( summ$coefficients[,"Robust z"] )
+  pval = 2 * ( c(1) - pnorm(abs(Z)) )
+  
+  mine = paste( round(est[2], 2),
+         " [",
+         round(lo[2], 2),
+         ", ",
+         round(hi[2], 2),
+         "]",
+         sep = "" )
+  
+  expect_equal( res1$est[2], mine )
+}
 
 # SET 6: Global test for site heterogeneity --------------------------------------
 
@@ -1116,9 +1177,6 @@ table_all_outcomes(.results.dir = paste( results.dir,
                                          sep = "/" ),
                    .filename = "table_set5C_posthoc.xlsx",
                    .var.name = "treat.vary")
-
-
-
 
 
 
