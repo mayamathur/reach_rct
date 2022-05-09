@@ -734,10 +734,6 @@ for ( .y in c(primYNames, secYNames) ) {
 }
 
 
-# @Gives warnings that SEs differed by more than 0.01
-# That seems to be because gender has evil tiny category called "RECODE TROUBLE"; return to this after dataset is fixed
-
-
 
 # ~ Single table with all outcomes ---------------------------
 
