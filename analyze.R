@@ -9,10 +9,10 @@ source("preliminaries.R")
 
 # Set Parameters Here --------------------------------
 # overwrite old results?
-overwrite.res = TRUE
+overwrite.res = FALSE
 
 # should sanity checks be run?
-run.sanity = TRUE
+run.sanity = FALSE
 
 # use scrambled treatment variable for blinding?
 scramble.treat = FALSE
@@ -194,6 +194,23 @@ if ( overwrite.res == TRUE ) {
 }
 
 
+# ~ Analyzed n's by site, treatment, and time point ----------------------------------------
+
+keepers = c(primYNamesWide, secYNamesWide)
+
+# for this table only, separate the two Columbia subsites
+#  because Columbia 2 did not collect any data at T3
+d$site_temp = d$site
+d$site_temp[ d$site == "Colombia" & d$site_t3 == "yes" ] = "Columbia 1"
+d$site_temp[ d$site == "Colombia" & d$site_t3 == "no" ] = "Columbia 2"
+table(d$site_temp)
+  
+  
+t = d %>% group_by(site_temp, treat) %>%
+  summarise_at(keepers, function(x) sum(!is.na(x)))
+
+
+View(t)
 
 
 # SET 1: GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
