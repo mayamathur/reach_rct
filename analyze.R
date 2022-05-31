@@ -84,7 +84,12 @@ expect_equal( nrow( impsl.t3.filtered[[1]] ),
 
 table(l.t3.filtered$site)
 
+# filtered for Analysis Set 5D
+l.t3.filtered.DT = l.t3.filtered %>% filter(treat == 0 & wave %in% c("T1", "T2"))
 
+impsl.t3.filtered.DT = lapply( X = impsl.t3.filtered,
+                               FUN = function(.dat) .dat[ .dat$treat == 0 &
+                                                            .dat$wave %in% c("T1", "T2"), ] )
 
 # SANITY CHECKS -----------------------------------------------------------
 
@@ -211,6 +216,10 @@ t = d %>% group_by(site_temp, treat) %>%
 
 
 View(t)
+
+setwd(results.dir)
+setwd("Auxiliary")
+write.xlsx( as.data.frame(t), "retained_n_by_site_and_wave.xlsx", row.names = FALSE)
 
 
 # SET 1: GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
@@ -1191,6 +1200,52 @@ table_all_outcomes(.results.dir = paste( results.dir,
                    .filename = "table_set5C_posthoc.xlsx",
                    .var.name = "treat.vary")
 
+
+# ~~ SET 5D: Main effect of treat.vary; FEs by site; DT group only (post hoc) ------------------
+
+# As sanity check, can compare these to plot_effect_maintenance.pdf
+
+missMethodsToRun = c("MI")
+
+
+
+for ( .y in primYNames ) {
+  
+  .formulaString = paste(.y, " ~ site + wave", sep = "" )
+  
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    cat( paste("\n\n**********Starting outcome", .y, "; method", .missMethod) )
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 5/Set 5D (DT only)/", missingString, sep = "" )
+    
+    analyze_one_outcome( dat.cc = l.t3.filtered.DT,
+                         dats.imp = impsl.t3.filtered.DT,
+                         
+                         missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         
+                         analysisVarNames = c(.y, "treat.vary", "site"),
+                         analysisLabel = paste("set5D_geelong_outcome_", .y, sep = " " ),
+                         corstr = "exchangeable",
+                         .results.dir = .results.dir )
+    
+  }
+}
+
+
+# single table with all outcomes
+table_all_outcomes(.results.dir = paste( results.dir,
+                                         "Analysis set 5/Set 5D (DT only)/Multiple imputation",
+                                         sep = "/" ),
+                   .filename = "table_set5D_manuscript.xlsx",
+                   .var.name = "waveT2")
 
 
 # ~ GEE controlling for precision covariates --------------------------------
