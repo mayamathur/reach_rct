@@ -69,8 +69,8 @@ if ( scramble.treat == TRUE ) {
 # prepare to exclude the single Columbia site that didn't collect any data at T3
 # as well as Ukraine-Realis for same reason
 
-
-t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
+t3.keeper.ids = d$uid[ d$site_t3 == "yes" &
+                         d$site != "Ukraine (Realis)" ]
 
 
 l.t3.filtered = l[ l$uid %in% t3.keeper.ids, ]
@@ -773,10 +773,12 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 plotList = list()
 
+# reorder the primary outcomes so the combined plot looks good
+primYNamesTemp = c("TRIM", "BSIdep", "BSIanx")
 
-for ( i in 1:length(primYNames) ) {
+for ( i in 1:length(primYNamesTemp) ) {
   
-  .y = primYNames[i]
+  .y = primYNamesTemp[i]
   lp = l.t3.filtered
   lp$Y = lp[[.y]]
   
@@ -803,9 +805,9 @@ for ( i in 1:length(primYNames) ) {
   
  
   # get pretty Y label
-  if (.y == "TRIM") .ylab = "TRIM"
-  if (.y == "BSIanx") .ylab = "Anxiety"
-  if (.y == "BSIdep") .ylab = "Depression"
+  if (.y == "TRIM") .ylab = "Unforgiveness"
+  if (.y == "BSIanx") .ylab = "Anxiety symptoms"
+  if (.y == "BSIdep") .ylab = "Depression symptoms"
   
   # make the plot
   p <<- ggplot( data = agg,
@@ -881,9 +883,9 @@ d %>% select(T1_TRIM, T2_TRIM, T3_TRIM, treat) %>%
 plotList = list()
 
 
-for ( i in 1:length(primYNames) ) {
+for ( i in 1:length(primYNamesTemp) ) {
   
-  .y = primYNames[i]
+  .y = primYNamesTemp[i]
   lp = l.t3.filtered
   lp$Y = lp[[.y]]
   
@@ -893,10 +895,13 @@ for ( i in 1:length(primYNames) ) {
                # sanity check:
                SE.plain = sd(Y, na.rm = TRUE) / sqrt( length(Y[!is.na(Y)] ) ) )
   
+  # rename the Ukraine site
+  agg2$site[ agg2$site == "Ukraine (UISA)" ] = "Ukraine (site 1)"
+  
   # get pretty Y label
-  if (.y == "TRIM") .ylab = "TRIM"
-  if (.y == "BSIanx") .ylab = "Anxiety"
-  if (.y == "BSIdep") .ylab = "Depression"
+  if (.y == "TRIM") .ylab = "Unforgiveness"
+  if (.y == "BSIanx") .ylab = "Anxiety symptoms"
+  if (.y == "BSIdep") .ylab = "Depression symptoms"
   
   # make the plot
   p <<- ggplot( data = agg2,
@@ -923,7 +928,7 @@ for ( i in 1:length(primYNames) ) {
     xlab("Time point") +
     
     theme_bw() +
-    theme(legend.position = "none") +
+    theme(legend.position = "bottom") +
     facet_wrap(~site)
   
   plotList[[i]] = p
