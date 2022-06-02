@@ -488,7 +488,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 
 
-# SET 2: GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
+# SET 2 and 2B: GEE MODELS (TREAT * TRAIT FORGIVENESS) -----------------------------------------------------------
 
 
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
@@ -498,15 +498,17 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 for ( .y in primYNames ) {
   
+  # Analysis set 2A
   .fullYName = paste("T2_", .y, sep = "")
   .formulaString = paste("T2_", .y, " ~ treat*T1_high_TrFS + site", sep = "" )
   
+ 
   for ( .missMethod in missMethodsToRun ) {
     
     if (.missMethod == "MI") missingString = "Multiple imputation"
     if (.missMethod == "CC") missingString = "Complete-case"
     
-    .results.dir = paste( results.dir, "/Analysis set 2/", missingString, sep = "" )
+    .results.dir = paste( results.dir, "/Analysis set 2; reference level TrFS=0/", missingString, sep = "" )
     
     analyze_one_outcome( missMethod = .missMethod,
                          yName = .y,
@@ -521,6 +523,34 @@ for ( .y in primYNames ) {
     
     
   }
+  
+  
+  # Set 2B
+  # with reversed coding
+  #@TEMP
+  .formulaString = paste("T2_", .y, " ~ treat*(T1_high_TrFS==0) + site", sep = "" )
+  
+  for ( .missMethod in missMethodsToRun ) {
+    
+    if (.missMethod == "MI") missingString = "Multiple imputation"
+    if (.missMethod == "CC") missingString = "Complete-case"
+    
+    .results.dir = paste( results.dir, "/Analysis set 2B; reference level TrFS=1/", missingString, sep = "" )
+    
+    analyze_one_outcome( missMethod = .missMethod,
+                         yName = .y,
+                         formulaString = .formulaString,
+                         idString = "as.factor(uid)",
+                         
+                         analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
+                         analysisLabel = paste("set2_outcome_", .y, sep = " " ),
+                         corstr = "exchangeable",
+                         bonferroni.alpha = 0.005,
+                         .results.dir = .results.dir )
+    
+    
+  }
+  
 }
 
 
