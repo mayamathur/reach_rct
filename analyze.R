@@ -9,10 +9,10 @@ source("preliminaries.R")
 
 # Set Parameters Here --------------------------------
 # overwrite old results?
-overwrite.res = FALSE
+overwrite.res = TRUE
 
 # should sanity checks be run?
-run.sanity = FALSE
+run.sanity = TRUE
 
 # use scrambled treatment variable for blinding?
 scramble.treat = FALSE
@@ -21,11 +21,11 @@ scramble.treat = FALSE
 # Read in data  --------------------------------
 setwd(prepped.data.dir)
 d = read_csv("prepped_data.csv") 
-expect_equal( nrow(d), 4438 )  # expected n from 2022-3-31
+expect_equal( nrow(d), 4598 )  # expected n from 2022-4-3
 
 # long dataset
 l = read_csv("prepped_data_long.csv") 
-expect_equal( nrow(l), 4438 * 3 )  # because 3 times/subject
+expect_equal( nrow(l), 4598 * 3 )  # because 3 times/subject
 
 
 # Read in imputations  --------------------------------
@@ -69,7 +69,7 @@ if ( scramble.treat == TRUE ) {
 # prepare to exclude the single Columbia site that didn't collect any data at T3
 # as well as Ukraine-Realis for same reason
 
-t3.keeper.ids = d$uid[ d$site_t3 == "yes" &
+t3.keeper.ids = d$uid[ d$site_t3 == 1 &
                          d$site != "Ukraine (Realis)" ]
 
 
@@ -178,18 +178,20 @@ t1.treat = t1.treat %>% add_row( .after = 14,
                                  Characteristic = "Other",
                                  Summary = "0 (0%)" )
 
-# combine into single table
-t1 = t1.cntrl
-names(t1)[2] = paste( "DT group (control)", "; n=", sum(d$treat == 0), sep="" )
-
-newColName = paste( "IT group", "; n=", sum(d$treat == 1), sep="" )
-t1[[newColName]] = t1.treat$Summary
+# # combine into single table
+# t1 = t1.cntrl
+# names(t1)[2] = paste( "DT group (control)", "; n=", sum(d$treat == 0), sep="" )
+# 
+# newColName = paste( "IT group", "; n=", sum(d$treat == 1), sep="" )
+# t1[[newColName]] = t1.treat$Summary
 
 
 if ( overwrite.res == TRUE ) {
   setwd(results.dir)
   setwd("Tables")
-  write.xlsx(t1, "*table_1_manuscript.xlsx", row.names = FALSE)
+  write.xlsx(t1.cntrl, "*table_1_DT_group_manuscript.xlsx", row.names = FALSE)
+  write.xlsx(t1.treat, "*table_1_IT_group_manuscript.xlsx", row.names = FALSE)
+  
 }
 
 
@@ -496,6 +498,8 @@ table_all_outcomes(.results.dir = paste( results.dir,
 #@NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
 #  but not site, so should NOT report the site p-values in this model
 
+missMethodsToRun = c("CC", "MI")
+
 for ( .y in primYNames ) {
   
   # Analysis set 2A
@@ -556,7 +560,7 @@ for ( .y in primYNames ) {
 ### Sanity check: Reproduce one outcome model manually
 if ( run.sanity == TRUE ) {
   # get previous results for comparison
-  setwd( paste( results.dir, "/Analysis set 2/Complete-case", sep = "" ) )
+  setwd( paste( results.dir, "/Analysis set 2; reference level TrFS=0/Complete-case", sep = "" ) )
   res1 = fread("set2_outcome_ TRIM_completeCase__gee_table_raw_.csv")
   
   
@@ -586,7 +590,7 @@ if ( run.sanity == TRUE ) {
 # ~ Single table with all outcomes ---------------------------
 
 table_all_outcomes(.results.dir = paste( results.dir,
-                                         "Analysis set 2/Multiple imputation",
+                                         "Analysis set 2; reference level TrFS=0/Multiple imputation",
                                          sep = "/" ),
                    .filename = "*table_set2_manuscript.xlsx",
                    .var.name = "treat:T1_high_TrFSTRUE")
@@ -737,6 +741,7 @@ for ( .y in primYNames ) {
 # given how similar the sites' estimates are for BSIdep and BSIanx,
 #  is it correct that their HMPs are so different (0.008 vs. 0.26)? 
 
+# NOT updated for the 2022-7-3 dataset update
 if ( run.sanity == TRUE ) {
   # for BSIanx
 pvals = c(0.270383, 0.790297, 0.055420, 0.477202, 0.153326)
@@ -854,8 +859,8 @@ for ( i in 1:length(primYNamesTemp) ) {
                        ymax = Mean + SE),
                    width = 0 ) +
     
-    scale_y_continuous( limits = c(-0.35, 0.35),
-                        breaks = round( seq(-0.35, 0.35, 0.1), 2) ) +
+    scale_y_continuous( limits = c(-0.4, 0.4),
+                        breaks = round( seq(-0.4, 0.4, 0.1), 2) ) +
     scale_color_manual( values = c("black", "orange" ) ) +
     labs(color='Group')  +
     
