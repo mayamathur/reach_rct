@@ -17,22 +17,19 @@ overwrite.res = TRUE
 overwrite.prepped.data = TRUE
 
 # should sanity checks be run?
-run.sanity = FALSE
+run.sanity = TRUE
 
 # should we impute from scratch or read in saved datasets?
-impute.from.scratch = FALSE
+impute.from.scratch = TRUE
 # number of imputations
 M = 10
 
 # read in raw data
 setwd(raw.data.dir)
 
-# # BEFORE adding the site_t3 indicator
-# setwd("2022-3-22")
-# d = read_excel("22-3-22 RCT raw data - updated.xlsx", sheet = 1) 
-# AFTER adding the indicator
-setwd("2022-3-22")
-d = read_excel("22-4-1 RCT raw data - updated.xlsx", sheet = 1) 
+
+setwd("2022-7-3")
+d = read_excel("22-7-1 Merged Dataset (Reduced).xlsx", sheet = 1) 
 
 # fix site_t3 variable because we also need to exclude Ukraine-Realis
 #  since it didn't collect any data at T3
@@ -167,24 +164,25 @@ d$age = as.numeric(d$age)
 # DROP VARIABLES -----------------------------------------------------------
 
 # need to remove T1_DTFS_EVENT because it will confuse recode_psych_var
-d = d %>% select( -c(T1_DATE,
-                     T2_DATE,
-                     T3_DATE,
+d = d %>% select( -c(#T1_DATE,
+                     #T2_DATE,
+                     #T3_DATE,
                      GENDER,
-                     GENDER_OTHER,
+                     #GENDER_OTHER,
                      Group,
-                     RACE_OTHER,
+                     #RACE_OTHER,
                      Ethnicity,
                      MARRIAGE,
                      EDUCATION,
-                     EDU_OTHER,
+                     #EDU_OTHER,
                      HOUSEHOLD_INCOME,
                      #RELIGION,
-                     RELIGION_YN,
+                     RELIGION_YN
                      #RELI_OTHER,
-                     FRE_RELI_EVENT,
-                     T1_severity,
-                     T1_DTFS_EVENT) )
+                     #FRE_RELI_EVENT,
+                     #T1_severity,
+                     #T1_DTFS_EVENT
+                     ) )
 
 
 # EXCLUDE MINORS -----------------------------------------------------------
