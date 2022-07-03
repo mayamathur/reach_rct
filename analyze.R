@@ -526,8 +526,7 @@ for ( .y in primYNames ) {
   
   
   # Set 2B
-  # with reversed coding
-  #@TEMP
+  # fit equivalent model, but reverse coding of TrFS to quickly get the treatment effect among TrFS = 1 group (the treat coeff in this model)
   .formulaString = paste("T2_", .y, " ~ treat*(T1_high_TrFS==0) + site", sep = "" )
   
   for ( .missMethod in missMethodsToRun ) {
@@ -543,7 +542,7 @@ for ( .y in primYNames ) {
                          idString = "as.factor(uid)",
                          
                          analysisVarNames = c(.fullYName, "treat", "site", "T1_high_TrFS"),
-                         analysisLabel = paste("set2_outcome_", .y, sep = " " ),
+                         analysisLabel = paste("set2b_outcome_", .y, sep = " " ),
                          corstr = "exchangeable",
                          bonferroni.alpha = 0.005,
                          .results.dir = .results.dir )
