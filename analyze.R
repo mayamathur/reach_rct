@@ -67,11 +67,7 @@ if ( scramble.treat == TRUE ) {
 # Filtered datasets for figs and analyses wrt T3 ----------------------------------
 
 # prepare to exclude the single Columbia site that didn't collect any data at T3
-# as well as Ukraine-Realis for same reason
-
-t3.keeper.ids = d$uid[ d$site_t3 == 1 &
-                         d$site != "Ukraine (Realis)" ]
-
+t3.keeper.ids = d$uid[ d$site_t3 == "yes" ]
 
 l.t3.filtered = l[ l$uid %in% t3.keeper.ids, ]
 
