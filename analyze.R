@@ -213,6 +213,80 @@ setwd(results.dir)
 setwd("Auxiliary")
 write.xlsx( as.data.frame(t), "retained_n_by_site_and_wave.xlsx", row.names = FALSE)
 
+# ~ Raw means and SDs of depression and anxiety ---------------------------------------- 
+
+# this was added during revision #1
+
+# unscale the variables
+temp = d
+
+temp$T1_BSIdep = ( temp$T1_BSIdep * 1.038907 ) + 1.449132
+temp$T2_BSIdep = ( temp$T2_BSIdep * 0.9957697 ) + 1.148687
+temp$T3_BSIdep = ( temp$T3_BSIdep * 0.9168074 ) + 0.8592435
+
+# raw means and SDs from prep script:
+# ****************** SCALE T1_BSIdep
+# Mean =  1.449132
+# SD =  1.038907
+# 
+# ****************** SCALE T2_BSIdep
+# Mean =  1.148687
+# SD =  0.9957697
+# 
+# ****************** SCALE T3_BSIdep
+# Mean =  0.8592435
+# SD =  0.9168074
+
+
+temp$T1_BSIanx = ( temp$T1_BSIanx * 1.103634 ) + 1.387046
+temp$T2_BSIanx = ( temp$T2_BSIanx * 1.050534 ) + 1.087257
+temp$T3_BSIanx = ( temp$T3_BSIanx * 0.9428977 ) + 0.7902591
+
+# ****************** SCALE T1_BSIanx
+# Mean =  1.387046
+# SD =  1.103634
+# 
+# ****************** SCALE T2_BSIanx
+# Mean =  1.087257
+# SD =  1.050534
+# 
+# ****************** SCALE T3_BSIanx
+# Mean =  0.7902591
+# SD =  0.9428977
+
+
+temp$T1_TRIM = ( temp$T1_TRIM * 0.8861775 ) + 2.818918
+temp$T2_TRIM = ( temp$T2_TRIM * 0.9052258 ) + 2.464251
+temp$T3_TRIM = ( temp$T3_TRIM * 0.7921935 ) + 2.217344
+
+
+# ****************** SCALE T1_TRIM
+# Mean =  2.818918
+# SD =  0.8861775
+# 
+# ****************** SCALE T2_TRIM
+# Mean =  2.464251
+# SD =  0.9052258
+# 
+# ****************** SCALE T3_TRIM
+# Mean =  2.217344
+# SD =  0.7921935
+
+# for Table 1: raw means and SDs at baseline
+
+vars = c("T1_BSIdep", "T1_BSIanx", "T1_TRIM",
+         "T2_BSIdep", "T2_BSIanx", "T2_TRIM",
+         "T3_BSIdep", "T3_BSIanx", "T3_TRIM")
+
+# overall
+CreateTableOne(vars = vars,
+               data = temp)
+
+# by treatment group
+CreateTableOne(vars = c("treat", vars),
+               strata = "treat",
+               data = temp)
+
 
 # SET 1: GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
 

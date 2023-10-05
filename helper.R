@@ -67,6 +67,15 @@ stat_CI = function(est, lo, hi){
 # stat_CI( c(.5, -.1), c(.3, -.2), c(.7, .0) )
 
 
+mean_sd = function(x, digits = 2) {
+  paste( round( mean(x, na.rm = TRUE), digits ), 
+         " (",
+         round( sd(x, na.rm = TRUE), digits ),
+         ")",
+         sep = "" )
+}
+#mean_sd(rnorm(100))
+
 # return percent true for 0/1 variable, counting NA as own category
 percTRUE_incl_NA = function(x) {
   prop.table( table(x, useNA = "ifany") )[2]
@@ -122,6 +131,10 @@ recode_psych_scale = function(.d,
   # new variable is mean by subject of the subscales
   .d2[[scale]] = rowMeans( .d2 %>% select(subscales) )
   
+  # print raw mean and sd that will be used to center and scale
+  cat("\n\n****************** SCALE", scale)
+  cat("\n  Mean = ", mean( .d2[[scale]], na.rm = TRUE ) )
+  cat("\n  SD = ", sd( .d2[[scale]], na.rm = TRUE ) )
   
   # standardize the new variable
   .d2[[scale]] = ( .d2[[scale]] - mean( .d2[[scale]], na.rm = TRUE ) ) / sd( .d2[[scale]], na.rm = TRUE )
