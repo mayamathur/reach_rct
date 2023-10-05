@@ -27,13 +27,7 @@ M = 10
 # read in raw data
 setwd(raw.data.dir)
 setwd("2022-7-15")
-d_new = read_excel("22-7-15 Merged Dataset (PTGI Included).xlsx", sheet = 1) 
-d = d_new
-
-# # #@DEBUG ONLY
-# setwd(raw.data.dir)
-# setwd("Old versions/2022-7-3")
-# d_old = read_excel("22-7-1 Merged Dataset (Reduced).xlsx", sheet = 1)
+d = read_excel("22-7-15 Merged Dataset (PTGI Included).xlsx", sheet = 1) 
 
 
 # fix site_t3 variable because we also need to exclude Ukraine-Realis

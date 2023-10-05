@@ -927,6 +927,7 @@ for ( i in 1:length(primYNamesTemp) ) {
   
   # rename the Ukraine site
   agg2$site[ agg2$site == "Ukraine (UISA)" ] = "Ukraine (site 1)"
+  agg2$site[ agg2$site == "Ukraine (Realis)" ] = "Ukraine (site 2)"
   
   # get pretty Y label
   if (.y == "TRIM") .ylab = "Unforgiveness"
@@ -977,6 +978,7 @@ pCombined = cowplot::plot_grid(plotlist = plotList,
 ggsave( paste("plot_effect_maintenance_by_site_all_outcomes.pdf", sep="" ),
         width = 8,
         height = 12)
+
 
 
 # SENSITIVITY ANALYSES -----------------------------------------------------------
@@ -1061,7 +1063,10 @@ for ( .y in c(primYNames) ) {
 
 
 
+# ~ Secular trends in DT group --------------------------------
 
+# Manuscript reports "increase in means between T1 and T2 for the delayed-treatment group". 
+#  This is from the coefficient for waveT2 in the Set 5 models (GEE with all time points).
 
 
 # ~ SET 5: GEE with all time points --------------------------------
