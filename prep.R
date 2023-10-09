@@ -331,7 +331,7 @@ CreateTableOne(vars = c("treat", vars),
 
 
 # keep only analysis variables
-d = d %>% select( all_of( c( "site", "site_t3", "ID",
+d = d %>% select( all_of( c( "site", "site_t3", "ID", "treat",
                              primYNamesWide, secYNamesWide, unusedYnamesWide,
                           demoVarsToAnalyze, demoVarsAux ) ) )
 
@@ -449,7 +449,7 @@ if ( impute.from.scratch == TRUE ) {
 
   # **important: any.missing WILL have missing values on auxiliary vars used to make the imputation model
   # because we're not imputing those vars
-  # what's important is that there should be no missing data in the varsToImput
+  # what's important is that there should be no missing data in the varsToImpute
   if ( any( any.missing[varsToImpute] ) == TRUE ) warning("*****Imputed datasets have missing data! Look at logged events.")
   
 
@@ -501,6 +501,19 @@ d = read_interm("prepped_data_intermediate2.csv")
 
 d = wrangle_post_imputation(.dat = d)
 l = make_long_dataset(.dat = d)
+
+# check standardization
+if (run.sanity == TRUE) {
+  expect_equal( meanNA(l$TRIM), 0)
+  expect_equal( sd(l$TRIM, na.rm = TRUE), 1)
+  
+  expect_equal( meanNA(l$BSIdep), 0)
+  expect_equal( sd(l$BSIdep, na.rm = TRUE), 1)
+  
+  expect_equal( meanNA(l$BSIanx), 0)
+  expect_equal( sd(l$BSIanx, na.rm = TRUE), 1)
+}
+
 
 
 # SAVE FINAL DATASET -----------------------------------------------------------
