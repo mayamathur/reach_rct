@@ -100,6 +100,16 @@ recode_psych_scale = function(.d,
                               printCorMat = TRUE,
                               dropSubscaleVars = FALSE) {
   
+  #browser()
+  
+  # #@test only
+  # .d=d
+  # scale = "T1_TRIM"
+  # revCode = NA
+  # printCorMat = TRUE
+  # dropSubscaleVars = TRUE
+  # # end test only
+  
   # duplicate dataset just for ease of sanity-checking
   .d2 = .d
   
@@ -127,24 +137,25 @@ recode_psych_scale = function(.d,
   head( .d2 %>% select(subscales) )
   
   
-  # make new variable whose name is just the root
+  # make new variable 
   # new variable is mean by subject of the subscales
-  .d2[[scale]] = rowMeans( .d2 %>% select(subscales) )
+  .d2[[ paste(scale, "_raw_mean", sep = "") ]] = rowMeans( .d2 %>% select(subscales) )
+  .d2[[ paste(scale, "_raw_sum", sep = "") ]] = rowSums( .d2 %>% select(subscales) )
   
-  # print raw mean and sd that will be used to center and scale
-  cat("\n\n****************** SCALE", scale)
-  cat("\n  Mean = ", mean( .d2[[scale]], na.rm = TRUE ) )
-  cat("\n  SD = ", sd( .d2[[scale]], na.rm = TRUE ) )
-  
-  # standardize the new variable
-  .d2[[scale]] = ( .d2[[scale]] - mean( .d2[[scale]], na.rm = TRUE ) ) / sd( .d2[[scale]], na.rm = TRUE )
+  # # print raw mean and sd that will be used to center and scale
+  # cat("\n\n****************** SCALE", scale)
+  # cat("\n  Mean = ", mean( .d2[[scale]], na.rm = TRUE ) )
+  # cat("\n  SD = ", sd( .d2[[scale]], na.rm = TRUE ) )
+  # 
+  # # standardize the new variable
+  # .d2[[scale]] = ( .d2[[scale]] - mean( .d2[[scale]], na.rm = TRUE ) ) / sd( .d2[[scale]], na.rm = TRUE )
   
   # remove subscale vars
   if ( dropSubscaleVars == TRUE ) {
     .d2 = .d2 %>% select(-subscales)
   }
   
-  return(.d2)
+  return( list(data = .d2, subscales = subscales) )
 }
 
 

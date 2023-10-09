@@ -200,39 +200,140 @@ write_interm(d, "prepped_data_intermediate1.csv")
 # read in intermediate dataset
 d = read_interm("prepped_data_intermediate1.csv")
 
+# keep a running list of all subscale variable names for easy removal later
+subscales_all = c()
 
-
+# ~ Make rowwise mean and sum variables for each scale -------------------------------------------------
 for ( .v in c(primYNames, secYNames, unusedYnames) ) {
   
   # make new variable for a given time point
   varName = paste("T1", .v, sep = "_")
-  d = recode_psych_scale(.d = d,
+  temp = recode_psych_scale(.d = d,
                          scale = varName, 
                          revCode = NA,
                          printCorMat = TRUE,
-                         dropSubscaleVars = TRUE)
+                         dropSubscaleVars = FALSE)
+  d = temp$data
+  subscales_all = c(subscales_all, temp$subscales)
   
   # make new variable for a given time point
   varName = paste("T2", .v, sep = "_")
-  d = recode_psych_scale(.d = d,
+  temp = recode_psych_scale(.d = d,
                          scale = varName, 
                          revCode = NA,
                          printCorMat = TRUE,
-                         dropSubscaleVars = TRUE)
+                         dropSubscaleVars = FALSE)
+  d = temp$data
+  subscales_all = c(subscales_all, temp$subscales)
   
   # make new variable for a given time point
   varName = paste("T3", .v, sep = "_")
-  d = recode_psych_scale(.d = d,
+  temp = recode_psych_scale(.d = d,
                          scale = varName, 
                          revCode = NA,
                          printCorMat = TRUE,
-                         dropSubscaleVars = TRUE)
+                         dropSubscaleVars = FALSE)
+  d = temp$data
+  subscales_all = c(subscales_all, temp$subscales)
   
   # check it
   message( paste("Final variables for", .v, ":",
                paste( stringsWith( pattern=.v, names(d) ), collapse = ", " ) ) )
   
 }
+
+# sanity check
+if ( run.sanity == TRUE ) {
+  dput( stringsWith( pattern = "TRIM", x = names(d) ) ) # find subscales manually
+  vars = c("T1_TRIM1", "T1_TRIM2", "T1_TRIM3", "T1_TRIM4", "T1_TRIM5", 
+           "T1_TRIM6", "T1_TRIM7", "T1_TRIM8", "T1_TRIM9", "T1_TRIM10", 
+           "T1_TRIM11", "T1_TRIM12", "T1_TRIM13", "T1_TRIM14", "T1_TRIM15", 
+           "T1_TRIM16", "T1_TRIM17", "T1_TRIM18")
+  temp = d %>% select( all_of(vars) ) 
+  expect_equal( rowMeans(temp), d$T1_TRIM_raw_mean )
+  expect_equal( rowSums(temp), d$T1_TRIM_raw_sum )
+}
+
+  
+
+# ~ Standardize each scale  -------------------------------------------------
+for ( .v in c(primYNames, secYNames, unusedYnames) ) {
+  
+  # all variables (3 time points) for this outcome
+  ( raw_mean_names = stringsWith( pattern = paste(.v, "raw_mean", sep = "_"),
+                                 x = names(d) ) )
+
+
+  #( subscales = subscales_all[ grepl( x = subscales_all, pattern = .v ) ] )
+  
+  
+  # d %>% select( all_of(raw_mean_names) )
+
+  # all entries for all 3 variables
+  all_entries = as.numeric( unlist( d %>% select( all_of(raw_mean_names) ) ) )
+  # sanity check: 3 time points
+  expect_equal( nrow(d) * 3, length(all_entries))
+  
+  # overall (across time points) mean and SD
+  ( .mean = meanNA( all_entries ) )
+  ( .sd = sd( all_entries, na.rm = TRUE ) )
+  
+  # make new standardized variable whose name is just the root
+  # new variable is mean by subject of the subscales
+  for ( t in 1:3 ){
+    new.name = str_replace(string = raw_mean_names[t], pattern = "_raw_mean", "")
+    d[[ new.name ]] = ( d[[ raw_mean_names[t] ]] - c(.mean) ) / .sd
+  }
+}
+
+
+# sanity check
+if ( run.sanity == TRUE ) {
+  dput( stringsWith( pattern = "BSIdep", x = names(d) ) ) # find subscales manually
+  
+  all_vars = c("T1_BSIdep_raw_mean", "T2_BSIdep_raw_mean", 
+               "T3_BSIdep_raw_mean")
+
+  all_entries = as.numeric( unlist( d %>% select( all_of(all_vars) ) ) )
+  
+  my_std = ( d$T1_BSIdep_raw_mean - meanNA(all_entries) ) / sd(all_entries, na.rm = TRUE)
+  
+  expect_equal( my_std, d$T1_BSIdep )
+}
+
+
+
+
+# save a version of dataset that still has the subscales
+write_interm(d, "prepped_data_intermediate1.5_with_subscales.csv")
+
+
+
+
+#@MOVE TO ANALYSIS:
+# sanity checks
+meanNA(d$T1_TRIM_raw_mean[d$treat == 1])
+meanNA(d$T2_TRIM_raw_mean[d$treat == 1])
+meanNA(d$T3_TRIM_raw_mean[d$treat == 1])
+
+sd(d$T1_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+sd(d$T2_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+sd(d$T3_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+
+
+yNames = c("T1_BSIdep", "T1_BSIanx", "T1_TRIM",
+         "T2_BSIdep", "T2_BSIanx", "T2_TRIM",
+         "T3_BSIdep", "T3_BSIanx", "T3_TRIM")
+CreateTableOne(vars = c("treat", vars),
+               strata = "treat",
+               data = d)
+
+
+
+# keep only analysis variables
+d = d %>% select( all_of( c( "site", "site_t3", "ID",
+                             primYNamesWide, secYNamesWide, unusedYnamesWide,
+                          demoVarsToAnalyze, demoVarsAux ) ) )
 
 
 
@@ -256,7 +357,9 @@ d = read_interm("prepped_data_intermediate2.csv")
 # recode characters as factors to prevent issues with mice()
 sum(sapply(d, is.character))  # check number of character vars
 d = d %>% mutate_if(sapply(d, is.character), as.factor)
-sum(sapply(d, is.character))  # check again; should be 0
+
+# check again; should be 0
+expect_equal( 0, sum(sapply(d, is.character)) )
 
 # ~ Look at Missingness --------------------------------------
 
