@@ -335,6 +335,8 @@ percTRUE_incl_NA = function(x) {
 
 make_table_one = function(.d,
                           .include.sanity.checks = FALSE){
+
+  
   t = table1_add_row( x = .d$age,
                       var.header = "Age",  
                       type = "cont",
@@ -370,17 +372,31 @@ make_table_one = function(.d,
                       countNA = TRUE,
                       .tab1 = t)
   
-  # t = table1_add_row( x = .d$religion,
-  #                     var.header = "Religion",  
-  #                     type = "cat",
-  #                     countNA = TRUE,
-  #                     .tab1 = t)
-  
+
   t = table1_add_row( x = .d$marstat,
                       var.header = "Marital status",  
                       type = "cat",
                       countNA = TRUE,
                       .tab1 = t)
+  
+  t = table1_add_row( x = -.d$T1_TRIM_raw_sum,
+                      var.header = "Unforgiveness",  
+                      type = "cont",
+                      countNA = TRUE,
+                      .tab1 = t )
+  
+  t = table1_add_row( x = .d$T1_BSIdep_raw_sum,
+                      var.header = "Depression symptoms",  
+                      type = "cont",
+                      countNA = TRUE,
+                      .tab1 = t )
+  
+  t = table1_add_row( x = .d$T1_BSIanx_raw_sum,
+                      var.header = "Anxiety symptoms",  
+                      type = "cont",
+                      countNA = TRUE,
+                      .tab1 = t )
+  
   
   if ( .include.sanity.checks == TRUE ) {
     

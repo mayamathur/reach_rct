@@ -124,18 +124,6 @@ d$hasReligAffil = recode(d$RELIGION_YN,
                        `1` = 1,
                        `2` = 0)
 
-# CURRENTLY DOESN'T EXIST
-# d$religion = recode(d$RELIGION,
-#                     `1` = "Christian", 
-#                     `2` = "Catholic",
-#                     `3` = "Protestant",
-#                     `4` = "Buddhist",
-#                     `5` = "Muslim",
-#                     `6` = "Other",
-#                     `8` = "UNKNOWN_CAT",
-#                     .default = "RECODE TROUBLE")
-
-
 d$marstat = recode(d$MARRIAGE,
                    `1` = "Single", 
                    `2` = "In relationship",
@@ -144,8 +132,6 @@ d$marstat = recode(d$MARRIAGE,
                    `5` = "Divorced",
                    `6` = "Widowed",
                    .default = "RECODE TROUBLE")
-
-
 
 
 # relabel the TFS scales so that recode_psych_var doesn't confused them with DTFS
@@ -302,36 +288,32 @@ if ( run.sanity == TRUE ) {
 }
 
 
-
-
 # save a version of dataset that still has the subscales
 write_interm(d, "prepped_data_intermediate1.5_with_subscales.csv")
 
 
-
-
 #@MOVE TO ANALYSIS:
 # sanity checks
-meanNA(d$T1_TRIM_raw_mean[d$treat == 1])
-meanNA(d$T2_TRIM_raw_mean[d$treat == 1])
-meanNA(d$T3_TRIM_raw_mean[d$treat == 1])
-
-sd(d$T1_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
-sd(d$T2_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
-sd(d$T3_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
-
-
-yNames = c("T1_BSIdep", "T1_BSIanx", "T1_TRIM",
-         "T2_BSIdep", "T2_BSIanx", "T2_TRIM",
-         "T3_BSIdep", "T3_BSIanx", "T3_TRIM")
-CreateTableOne(vars = c("treat", vars),
-               strata = "treat",
-               data = d)
-
+if ( run.sanity == TRUE ) {
+  meanNA(d$T1_TRIM_raw_mean[d$treat == 1])
+  meanNA(d$T2_TRIM_raw_mean[d$treat == 1])
+  meanNA(d$T3_TRIM_raw_mean[d$treat == 1])
+  
+  sd(d$T1_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+  sd(d$T2_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+  sd(d$T3_TRIM_raw_mean[d$treat == 1], na.rm = TRUE)
+  
+  yNames = c("T1_BSIdep", "T1_BSIanx", "T1_TRIM",
+             "T2_BSIdep", "T2_BSIanx", "T2_TRIM",
+             "T3_BSIdep", "T3_BSIanx", "T3_TRIM")
+  CreateTableOne(vars = c("treat", vars),
+                 strata = "treat",
+                 data = d)
+}
 
 
 # keep only analysis variables
-d = d %>% select( all_of( c( "site", "site_t3", "ID", "treat",
+d = d %>% select( all_of( c( "site", "site_t3", "uid", "treat",
                              primYNamesWide, secYNamesWide, unusedYnamesWide,
                           demoVarsToAnalyze, demoVarsAux ) ) )
 

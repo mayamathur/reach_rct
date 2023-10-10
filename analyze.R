@@ -152,9 +152,12 @@ if ( run.sanity == TRUE ) {
 
 # ~ Across all sites ----------------------------------------
 
+# use dataset that still has raw means and sums for outcomes
+temp = read_interm("prepped_data_intermediate1.5_with_subscales.csv")
+
 # stratify demographics by treatment group
-t1.treat = make_table_one(.d = d %>% filter( treat == 1 ) )
-t1.cntrl = make_table_one(.d = d %>% filter( treat == 0 ) )
+t1.treat = make_table_one(.d = temp %>% filter( treat == 1 ) )
+t1.cntrl = make_table_one(.d = temp %>% filter( treat == 0 ) )
 
 # look for dimension mismatches caused by missing categories in one treatment group
 dim(t1.treat); dim(t1.cntrl)
@@ -174,12 +177,7 @@ t1.treat = t1.treat %>% add_row( .after = 14,
                                  Characteristic = "Other",
                                  Summary = "0 (0%)" )
 
-# # combine into single table
-# t1 = t1.cntrl
-# names(t1)[2] = paste( "DT group (control)", "; n=", sum(d$treat == 0), sep="" )
-# 
-# newColName = paste( "IT group", "; n=", sum(d$treat == 1), sep="" )
-# t1[[newColName]] = t1.treat$Summary
+# need SDs for primary outcomes
 
 
 if ( overwrite.res == TRUE ) {
