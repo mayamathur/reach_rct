@@ -379,7 +379,7 @@ make_table_one = function(.d,
                       countNA = TRUE,
                       .tab1 = t)
   
-  t = table1_add_row( x = -.d$T1_TRIM_raw_sum,
+  t = table1_add_row( x = .d$T1_TRIM_raw_sum,
                       var.header = "Unforgiveness",  
                       type = "cont",
                       countNA = TRUE,

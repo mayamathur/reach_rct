@@ -177,7 +177,7 @@ t1.treat = t1.treat %>% add_row( .after = 14,
                                  Characteristic = "Other",
                                  Summary = "0 (0%)" )
 
-# need SDs for primary outcomes
+# need means and SDs for primary outcomes
 
 
 if ( overwrite.res == TRUE ) {
@@ -211,70 +211,16 @@ setwd(results.dir)
 setwd("Auxiliary")
 write.xlsx( as.data.frame(t), "retained_n_by_site_and_wave.xlsx", row.names = FALSE)
 
-# ~ Raw means and SDs of depression and anxiety ---------------------------------------- 
+# ~ Raw means and SDs of depression and anxiety by wave ---------------------------------------- 
 
-# this was added during revision #1
+# use dataset that still has raw means and sums for outcomes
+temp = read_interm("prepped_data_intermediate1.5_with_subscales.csv")
 
-# unscale the variables
-temp = d
-
-temp$T1_BSIdep = ( temp$T1_BSIdep * 1.038907 ) + 1.449132
-temp$T2_BSIdep = ( temp$T2_BSIdep * 0.9957697 ) + 1.148687
-temp$T3_BSIdep = ( temp$T3_BSIdep * 0.9168074 ) + 0.8592435
-
-# raw means and SDs from prep script:
-# ****************** SCALE T1_BSIdep
-# Mean =  1.449132
-# SD =  1.038907
-# 
-# ****************** SCALE T2_BSIdep
-# Mean =  1.148687
-# SD =  0.9957697
-# 
-# ****************** SCALE T3_BSIdep
-# Mean =  0.8592435
-# SD =  0.9168074
-
-
-temp$T1_BSIanx = ( temp$T1_BSIanx * 1.103634 ) + 1.387046
-temp$T2_BSIanx = ( temp$T2_BSIanx * 1.050534 ) + 1.087257
-temp$T3_BSIanx = ( temp$T3_BSIanx * 0.9428977 ) + 0.7902591
-
-# ****************** SCALE T1_BSIanx
-# Mean =  1.387046
-# SD =  1.103634
-# 
-# ****************** SCALE T2_BSIanx
-# Mean =  1.087257
-# SD =  1.050534
-# 
-# ****************** SCALE T3_BSIanx
-# Mean =  0.7902591
-# SD =  0.9428977
-
-
-temp$T1_TRIM = ( temp$T1_TRIM * 0.8861775 ) + 2.818918
-temp$T2_TRIM = ( temp$T2_TRIM * 0.9052258 ) + 2.464251
-temp$T3_TRIM = ( temp$T3_TRIM * 0.7921935 ) + 2.217344
-
-
-# ****************** SCALE T1_TRIM
-# Mean =  2.818918
-# SD =  0.8861775
-# 
-# ****************** SCALE T2_TRIM
-# Mean =  2.464251
-# SD =  0.9052258
-# 
-# ****************** SCALE T3_TRIM
-# Mean =  2.217344
-# SD =  0.7921935
 
 # for Table 1: raw means and SDs at baseline
-
-vars = c("T1_BSIdep", "T1_BSIanx", "T1_TRIM",
-         "T2_BSIdep", "T2_BSIanx", "T2_TRIM",
-         "T3_BSIdep", "T3_BSIanx", "T3_TRIM")
+vars = c("T1_BSIdep_raw_sum", "T1_BSIanx_raw_sum", "T1_TRIM_raw_sum",
+         "T2_BSIdep_raw_sum", "T2_BSIanx_raw_sum", "T2_TRIM_raw_sum",
+         "T3_BSIdep_raw_sum", "T3_BSIanx_raw_sum", "T3_TRIM_raw_sum")
 
 # overall
 CreateTableOne(vars = vars,
@@ -285,6 +231,8 @@ CreateTableOne(vars = c("treat", vars),
                strata = "treat",
                data = temp)
 
+
+#bm
 
 # SET 1: GEE MODELS (PRIMARY AND SECONDARY OUTCOMES) -----------------------------------------------------------
 
@@ -563,7 +511,7 @@ table_all_outcomes(.results.dir = paste( results.dir,
 
 # GEE of primary Y's ~ treat*T1_TrFS(binary) + site
 
-#@NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
+# NOTE: Per preregistration, the coef for T1_high_TrFS is counted in Bonferroni,
 #  but not site, so should NOT report the site p-values in this model
 
 missMethodsToRun = c("CC", "MI")
@@ -1022,8 +970,8 @@ for ( i in 1:length(primYNamesTemp) ) {
                        ymax = Mean + SE),
                    width = 0 ) +
     
-    scale_y_continuous( limits = c(-0.7, 1.1),
-                        breaks = round( seq(-0.7, 1.1, 0.2), 2) ) +
+    scale_y_continuous( limits = c(-0.9, 0.7),
+                        breaks = round( seq(-0.9, 0.7, 0.2), 2) ) +
     scale_color_manual( values = c("black", "orange" ) ) +
     labs(color='Group')  +
     
@@ -1063,8 +1011,9 @@ ggsave( paste("plot_effect_maintenance_by_site_all_outcomes.pdf", sep="" ),
 
 # repeated measures structure won't fit
 # "Error model is singular"
-summary( aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
-              data = l.t3.filtered ) )
+# summary( aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
+#               data = l.t3.filtered ) )
+
 
 # this does work
 full = aov( TRIM ~ treat * wave, data = l.t3.filtered )
@@ -1105,40 +1054,10 @@ for ( .y in c(primYNames) ) {
 
 
 
-
-
-
-# ### DEBUGGING
-# res.aov = aov( TRIM ~ treat * wave + Error(site / (treat * wave) ),
-#                data = l )
-# 
-# small.aov = aov( TRIM ~ 1 + Error(site / (treat * wave) ),
-#                  data = l )
-# 
-# anova(res.aov, small.aov)
-# 
-# 
-# 
-# 
-# full = lm( TRIM ~ treat * wave + site, data = l )
-# summary(full)
-# 
-# anova(full)
-# 
-# 
-# summary( aov( TRIM ~ treat * wave + Error(site),
-#                data = l ) )
-# 
-# 
-# temp = lm( TRIM ~ treat * wave * site, data = l )
-# anova(temp)
-
-
-
 # ~ Secular trends in DT group --------------------------------
 
 # Manuscript reports "increase in means between T1 and T2 for the delayed-treatment group". 
-#  This is from the coefficient for waveT2 in the Set 5 models (GEE with all time points).
+#  This is from the coefficient for waveT2 in the Set 5A models (GEE with all time points).
 
 
 # ~ SET 5: GEE with all time points --------------------------------
@@ -1178,7 +1097,7 @@ for ( .y in primYNames ) {
                          .results.dir = .results.dir )
     
   }
-}git ac 
+} 
 
 
 # single table with all outcomes

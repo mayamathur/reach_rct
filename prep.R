@@ -180,9 +180,6 @@ write_interm(d, "prepped_data_intermediate1.csv")
 
 # RECODE SCALES -----------------------------------------------------------
 
-# scale: part of scale string that appears in each subscale's variable name (e.g., "spec" for speciesism); also becomes the name of the new composite variable
-# revCode: quoted names of any subscales that need to be reverse-coded
-
 # read in intermediate dataset
 d = read_interm("prepped_data_intermediate1.csv")
 
@@ -292,7 +289,6 @@ if ( run.sanity == TRUE ) {
 write_interm(d, "prepped_data_intermediate1.5_with_subscales.csv")
 
 
-#@MOVE TO ANALYSIS:
 # sanity checks
 if ( run.sanity == TRUE ) {
   meanNA(d$T1_TRIM_raw_mean[d$treat == 1])
