@@ -235,6 +235,9 @@ if ( run.sanity == TRUE ) {
   temp = d %>% select( all_of(vars) ) 
   expect_equal( rowMeans(temp), d$T1_TRIM_raw_mean )
   expect_equal( rowSums(temp), d$T1_TRIM_raw_sum )
+  
+  # for a single participant
+  
 }
 
   
